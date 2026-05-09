@@ -11,10 +11,12 @@ Before running the application, ensure your system meets the following minor req
 1. Navigate to the **[Releases](../../releases)** page of this repository.
 2. Download the compressed archive that matches your Operating System:
    * **Windows:** Download `VideoDownloader-v1.0.2-Win.zip`
-   * **MacOS:** : Download `VideoDownloader-v1.0.2-Mac-Intel.tar.gz` (Supporting to Mac's x64 architecture)
-   				  Download `VideoDownloader-v1.0.2-Mac-AppleSilicon.tar.gz` (Supporting to Mac's ARM architecture)
-   * **Linux:** Download `VideoDownloader-v1.0.2-Linux-x64.tar.gz` (Supporting to x64 architecture too)
-     			Download `VideoDownloader-v1.0.2-Linux-ARM.tar.gz` (Supporting to ARM architecture too)
+   * **MacOS:**
+    	* Download `VideoDownloader-v1.0.2-Mac-Intel.tar.gz` (Supporting to Mac's x64 architecture)
+    	* Download `VideoDownloader-v1.0.2-Mac-AppleSilicon.tar.gz` (Supporting to Mac's ARM architecture)
+   * **Linux:**
+   		* Download `VideoDownloader-v1.0.2-Linux-x64.tar.gz` (Supporting to x64 architecture too)
+     	* Download `VideoDownloader-v1.0.2-Linux-ARM.tar.gz` (Supporting to ARM architecture too)
 
 ## 📂 Package Structure (What's Inside)
 Once extracted, your installation folder will contain a clean, pre-configured ecosystem:
