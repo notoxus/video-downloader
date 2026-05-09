@@ -30,7 +30,7 @@ Once extracted, your installation folder will contain a clean, pre-configured ec
 ## Step 3: Run the Application
 
 ### For Windows Users
-1. Extract the downloaded `VideoDownloader-v1.0.0-Win.zip` archive to any folder of your choice.
+1. Extract the downloaded `VideoDownloader-v1.0.2-Win.zip` archive to any folder of your choice.
 2. Simply **double-click** the **`run.bat`** file to launch the app!
    *(Note: A background launcher ensures the app opens seamlessly without leaving an annoying black command prompt window open).*
 
