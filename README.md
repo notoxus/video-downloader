@@ -14,10 +14,8 @@ Extract the archive, open your terminal in the extracted folder, and execute:
 	```bash
 	
 	chmod +x run.sh
-	
 	./run.sh
-
-## Sit back, relax and enjoy the momment
+## Sit back, relax and enjoy the moment
 
 ## ✨ Key Features
 There are two main ways to hunt your videos:
