@@ -49,23 +49,30 @@ public class AppGUI extends JFrame {
 		this.manager = manager;
 
 		setTitle("Video Downloader - v1.0.2");
-		setSize(950, 600);
+		setSize(1050, 660);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
 		setLayout(new BorderLayout(10, 10));
 
 		JPanel topPanel = new JPanel(new BorderLayout(10, 10));
-		topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+		topPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 0, 12));
 
-		JPanel inputPanel = new JPanel(new BorderLayout(5, 0));
-		inputPanel.add(new JLabel("Target link:"), BorderLayout.WEST);
+		JPanel inputPanel = new JPanel(new BorderLayout(8, 0));
+		JLabel urlLabel = new JLabel("URL:");
+		urlLabel.setFont(urlLabel.getFont().deriveFont(Font.BOLD));
+		inputPanel.add(urlLabel, BorderLayout.WEST);
 		urlInput = new JTextField();
+		urlInput.setToolTipText("Paste a video URL here, or leave empty to open a capture browser");
 		inputPanel.add(urlInput, BorderLayout.CENTER);
 
-		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+		JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
 		btnImportApi = new JButton("Import API JSON");
-		btnClipboard = new JButton("Open following clipboard");
-		btnHunt = new JButton("Hunting / Download (Enter)");
+		btnImportApi.setToolTipText("Import a JSON episode list for bulk downloads");
+		btnClipboard = new JButton("From Clipboard");
+		btnClipboard.setToolTipText("Parse video URLs from clipboard content");
+		btnHunt = new JButton("Hunt / Download  ↵");
+		btnHunt.setToolTipText("Detect stream URL via browser extension, or download directly");
+		btnHunt.putClientProperty("JButton.buttonType", "roundRect");
 		btnPanel.add(btnImportApi);
 		btnPanel.add(btnClipboard);
 		btnPanel.add(btnHunt);
@@ -84,13 +91,19 @@ public class AppGUI extends JFrame {
 			}
 		};
 		queueTable = new JTable(tableModel);
+		queueTable.setRowHeight(30);
+		queueTable.setShowHorizontalLines(false);
+		queueTable.setShowVerticalLines(false);
+		queueTable.setIntercellSpacing(new java.awt.Dimension(0, 1));
+		queueTable.setFillsViewportHeight(true);
+		queueTable.getTableHeader().setReorderingAllowed(false);
 
-		queueTable.getColumnModel().getColumn(0).setPreferredWidth(45);
-		queueTable.getColumnModel().getColumn(0).setMaxWidth(45);
+		queueTable.getColumnModel().getColumn(0).setPreferredWidth(50);
+		queueTable.getColumnModel().getColumn(0).setMaxWidth(50);
 		queueTable.getColumnModel().getColumn(2).setPreferredWidth(70);
 		queueTable.getColumnModel().getColumn(2).setMaxWidth(70);
-		queueTable.getColumnModel().getColumn(3).setPreferredWidth(100);
-		queueTable.getColumnModel().getColumn(3).setMaxWidth(120);
+		queueTable.getColumnModel().getColumn(3).setPreferredWidth(110);
+		queueTable.getColumnModel().getColumn(3).setMaxWidth(130);
 		ProgressRenderer progressRenderer = new ProgressRenderer();
 		queueTable.getColumnModel().getColumn(4).setCellRenderer(progressRenderer);
 
@@ -170,19 +183,22 @@ public class AppGUI extends JFrame {
 		queuePanel.add(tableScroll, BorderLayout.CENTER);
 
 		JPanel bottomContainer = new JPanel(new BorderLayout(5, 5));
-		bottomContainer.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+		bottomContainer.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
 
 		JPanel consolePanel = new JPanel(new BorderLayout());
 		consolePanel.setBorder(BorderFactory.createTitledBorder("Console Log"));
-		consoleLog = new JTextArea(6, 50);
+		consoleLog = new JTextArea(7, 50);
 		consoleLog.setEditable(false);
-		consoleLog.setBackground(new Color(30, 30, 30));
-		consoleLog.setForeground(new Color(200, 200, 200));
+		consoleLog.setBackground(new Color(28, 28, 28));
+		consoleLog.setForeground(new Color(180, 210, 180));
 		consoleLog.setFont(new Font("Monospaced", Font.PLAIN, 12));
+		consoleLog.setMargin(new java.awt.Insets(4, 6, 4, 6));
 		consolePanel.add(new JScrollPane(consoleLog), BorderLayout.CENTER);
 
 		JPanel actionPanel = new JPanel(new BorderLayout(0, 5));
 		btnDownloadSelected = new JButton("Download Selected");
+		btnDownloadSelected.setToolTipText("Start downloading all selected items in the queue");
+		btnDownloadSelected.putClientProperty("JButton.buttonType", "roundRect");
 
 		actionPanel.add(btnDownloadSelected, BorderLayout.NORTH);
 

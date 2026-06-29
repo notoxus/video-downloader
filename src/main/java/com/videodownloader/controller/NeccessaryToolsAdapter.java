@@ -109,6 +109,10 @@ public class NeccessaryToolsAdapter implements DownloadStrategy {
 
 			commandList.add("-N");
 			commandList.add("16");
+			commandList.add("--fragment-retries");
+			commandList.add("10");
+			commandList.add("--retry-sleep");
+			commandList.add("3");
 
 			if (format.equalsIgnoreCase("mp4")) {
 				commandList.add("-f");

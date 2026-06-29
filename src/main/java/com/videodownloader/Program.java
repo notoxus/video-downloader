@@ -1,8 +1,8 @@
 package com.videodownloader;
 
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
 import com.videodownloader.controller.ClipboardMonitor;
 import com.videodownloader.controller.DependencyManager;
 import com.videodownloader.controller.DownloadManager;
@@ -13,10 +13,7 @@ import com.videodownloader.view.AppGUI;
 
 public class Program {
 	public static void main(String[] args) {
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (Exception ignored) {
-		}
+		FlatDarculaLaf.setup();
 
 		DependencyManager.checkAndDownloadDependencies();
 
