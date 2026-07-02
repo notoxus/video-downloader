@@ -1,6 +1,6 @@
 # Video Downloader
 
-![Downloads](https://img.shields.io/github/downloads/CSerVN/video-downloader/total)
+![Downloads](https://img.shields.io/github/downloads/notoxus/video-downloader/total)
 
 A desktop app for capturing and downloading HLS/DASH video streams, with built-in support for YouTube, TikTok, Facebook, Instagram, and many more.
 
@@ -31,6 +31,11 @@ No Java installation required — a bundled JRE is included.
 | **Bulk Import** | Import an API JSON with multiple episodes to queue an entire series |
 | **Format Choice** | Download as MP4, MKV, or extract audio as MP3 |
 | **Concurrent Fragments** | 16 parallel HLS fragment connections for fast stream downloads |
+| **Video Titles** | Queue shows the actual video title instead of the raw URL (hover for the full link) |
+| **Search & Clear** | Filter the queue with the search bar; clear all pending items in one click |
+| **Auto-Update (engine)** | yt-dlp self-updates in the background on every launch, so site extractors stay fresh |
+| **Auto-Update (app)** | On launch the app checks GitHub for a newer release and can download the ready-to-use package for your exact OS/architecture |
+| **Trim Before Download** | Cut a specific section (e.g. 01:30 → 02:45) and download only that clip — no full download needed |
 
 ---
 
@@ -56,6 +61,17 @@ Many sites load video streams dynamically without a shareable URL. Hunting mode 
 ### Method 3 — Clipboard Monitor
 
 Just copy a video URL from anywhere. The app detects it and adds it to the queue within 1–2 seconds.
+
+### Trimming a Clip
+
+When the format dialog appears, tick **"Cut a section before downloading"**. The app reads the video length and shows a **dual-handle slider over a thumbnail filmstrip** — just drag the two handles to set the start and end. The live label shows the exact times and the resulting clip length.
+
+- **Fast cut (default):** cuts on the nearest keyframe using a stream copy — nearly as quick as a normal download.
+- **Frame-accurate cut:** tick "Frame-accurate cut" to start/end at the exact second. This re-encodes the clip, so it's slower but precise.
+
+Notes:
+- The filmstrip preview is best-effort. For DRM-protected or some login-gated streams it may not appear — the slider still works.
+- The queue shows a ✂ mark next to the format for trimmed downloads.
 
 ### Method 4 — Bulk API JSON Import
 
@@ -141,3 +157,9 @@ Outputs are in `target/` — platform-specific archives for Windows, macOS (x64/
 
 **Chrome says the extension is invalid**
 - Delete `~/.VideoDownloaderApp/Extension/` and restart the app to regenerate it.
+
+**yt-dlp warns "No supported JavaScript runtime could be found"**
+- YouTube now requires a JavaScript runtime for full format extraction. Install [Deno](https://deno.land):
+  - Windows: `winget install DenoLand.Deno`
+  - macOS/Linux: `curl -fsSL https://deno.land/install.sh | sh`
+- Downloads still work without it, but some YouTube formats may be missing.

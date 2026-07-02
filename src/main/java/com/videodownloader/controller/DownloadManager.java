@@ -8,7 +8,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import com.google.gson.JsonArray;
@@ -19,6 +18,7 @@ import com.videodownloader.model.DownloadStrategy;
 import com.videodownloader.model.Observer;
 import com.videodownloader.model.VideoInfo;
 import com.videodownloader.view.AppGUI;
+import com.videodownloader.view.DownloadOptionsDialog;
 import com.videodownloader.view.FolderSelector;
 
 public class DownloadManager implements Observer {
@@ -91,7 +91,8 @@ public class DownloadManager implements Observer {
 
 				System.out.println("Remaining: " + remaining + " video.");
 				if (strategy != null) {
-					strategy.startDownload(task.url, task.savePath, task.format, this);
+					strategy.startDownload(task.url, task.savePath, task.format, task.trimSection, task.preciseCut,
+							this);
 				}
 
 			} catch (InterruptedException e) {
@@ -157,25 +158,23 @@ public class DownloadManager implements Observer {
 	public void processAutoCapture(String url) {
 		Toolkit.getDefaultToolkit().beep();
 
-		String[] options = { "1. MP4 - Video", "2. MP3 - Audio", "3. MKV - Original" };
-		int choice = JOptionPane.showOptionDialog(null,
-				"Video Hunter has already catched the download link!\n\nTarget link: " + url
-						+ "\n\nChoose format to download:",
-				"New video/playlist detected!", JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
-				options, options[0]);
+		DownloadOptionsDialog.Options opts = DownloadOptionsDialog
+				.show("Video Hunter has caught a download link!\n\nTarget: " + url, url, 0, url);
 
-		if (choice != JOptionPane.CLOSED_OPTION) {
-			String format = (choice == 1) ? "mp3" : (choice == 2 ? "mkv" : "mp4");
+		if (opts != null) {
 			System.out.println("\n[Auto-Capture] Preparing, waiting for user to start...");
 			String savePath = FolderSelector.chooseSaveDirectory();
 
 			if (savePath != null && !savePath.isEmpty()) {
 				SwingUtilities.invokeLater(() -> {
 					if (gui != null) {
-						int newRow = gui.addQueueItem(url, format.toUpperCase(), "Waiting...");
-						pendingTasks.put(newRow, new DownloadTask(url, savePath, format, newRow));
+						String formatLabel = opts.format.toUpperCase() + (opts.trimSection != null ? " ✂" : "");
+						int newRow = gui.addQueueItem(url, formatLabel, "Waiting...");
+						pendingTasks.put(newRow,
+								new DownloadTask(url, savePath, opts.format, opts.trimSection, opts.preciseCut, newRow));
 						gui.logToConsole(
 								"=> [Hunter] Added captured link to list (Row " + newRow + "). Ready to download.");
+						resolveTitleAsync(url, newRow);
 					}
 				});
 			} else {
@@ -184,6 +183,19 @@ public class DownloadManager implements Observer {
 		} else {
 			System.out.println("\n[Auto-Capture] Skip the trash links: " + url);
 		}
+	}
+
+	// Best-effort: swap the raw URL in the queue for the video title once known.
+	private void resolveTitleAsync(String url, int rowIndex) {
+		new Thread(() -> {
+			try {
+				VideoInfo info = strategy.fetchMetadata(url);
+				if (info != null && info.getTitle() != null && !info.getTitle().isBlank() && gui != null) {
+					gui.updateQueueItemName(rowIndex, info.getTitle());
+				}
+			} catch (Exception ignored) {
+			}
+		}).start();
 	}
 
 	public void processLink(String url) {
@@ -212,22 +224,31 @@ public class DownloadManager implements Observer {
 						if (savePath == null || savePath.isEmpty())
 							return;
 
-						String[] options = { "1. MP4 - Popular video formatter (Default)", "MP3 - Just audio",
-								"WebM/MKV - Original quality" };
-						int choice = JOptionPane.showOptionDialog(null, "Choose download format for:\n" + displayTitle,
-								"video/playlist", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE, null,
-								options, options[0]);
-
-						if (choice == JOptionPane.CLOSED_OPTION)
+						// Trimming only makes sense for a single video; a playlist has no shared timeline.
+						int durationHint = (links.size() == 1) ? info.getDurationSeconds() : 0;
+						String previewUrl = (links.size() == 1) ? links.get(0) : null;
+						DownloadOptionsDialog.Options opts = DownloadOptionsDialog
+								.show("Choose download options for:\n" + displayTitle, previewUrl, durationHint,
+										previewUrl);
+						if (opts == null)
 							return;
 
-						String format = (choice == 1) ? "mp3" : (choice == 2 ? "webm/mkv" : "mp4");
+						String formatLabel = opts.format.toUpperCase() + (opts.trimSection != null ? " ✂" : "");
+
+						// Cap async title lookups: each one spawns a yt-dlp process.
+						boolean resolveTitles = links.size() <= 20;
 
 						for (String link : links) {
-							int newRow = (gui != null) ? gui.addQueueItem(link, format.toUpperCase(), "Waiting...")
+							String display = (links.size() == 1 && info.getTitle() != null
+									&& !info.getTitle().isBlank()) ? info.getTitle() : link;
+							int newRow = (gui != null) ? gui.addQueueItem(display, formatLabel, "Waiting...")
 									: -1;
 							if (newRow != -1) {
-								pendingTasks.put(newRow, new DownloadTask(link, savePath, format, newRow));
+								pendingTasks.put(newRow, new DownloadTask(link, savePath, opts.format, opts.trimSection,
+										opts.preciseCut, newRow));
+								if (links.size() > 1 && resolveTitles) {
+									resolveTitleAsync(link, newRow);
+								}
 							}
 						}
 						if (gui != null)
@@ -276,7 +297,7 @@ public class DownloadManager implements Observer {
 
 						if (gui != null) {
 							int newRow = gui.addQueueItem(fileName, "MP4", "Waiting...");
-							pendingTasks.put(newRow, new DownloadTask(m3u8Url, savePath, "mp4", newRow));
+							pendingTasks.put(newRow, new DownloadTask(m3u8Url, savePath, "mp4", null, false, newRow));
 						}
 					}
 					if (gui != null)
@@ -293,12 +314,17 @@ public class DownloadManager implements Observer {
 		String url;
 		String savePath;
 		String format;
+		String trimSection; // null = download the full video
+		boolean preciseCut;
 		int rowIndex;
 
-		public DownloadTask(String url, String savePath, String format, int rowIndex) {
+		public DownloadTask(String url, String savePath, String format, String trimSection, boolean preciseCut,
+				int rowIndex) {
 			this.url = url;
 			this.savePath = savePath;
 			this.format = format;
+			this.trimSection = trimSection;
+			this.preciseCut = preciseCut;
 			this.rowIndex = rowIndex;
 		}
 	}

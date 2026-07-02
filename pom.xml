@@ -55,7 +55,7 @@
 							<goal>single</goal>
 						</goals>
 						<configuration>
-							<finalName>VideoDownloader-v1.0.2</finalName>
+							<finalName>VideoDownloader-v1.0.3</finalName>
 							<appendAssemblyId>true</appendAssemblyId>
 							<descriptors>
 								<descriptor>src/assembly/win.xml</descriptor>

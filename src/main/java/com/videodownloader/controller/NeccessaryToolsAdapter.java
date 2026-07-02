@@ -15,54 +15,7 @@ public class NeccessaryToolsAdapter implements DownloadStrategy {
 	private final Gson gson = new Gson();
 
 	private String getToolPath(String toolType) {
-		String os = System.getProperty("os.name").toLowerCase();
-		String arch = System.getProperty("os.arch").toLowerCase();
-
-		String fileName = "";
-
-		if (toolType.equals("ytdlp")) {
-			if (os.contains("win"))
-				fileName = "yt-dlp.exe";
-			else if (os.contains("mac"))
-				fileName = "yt-dlp-macos";
-			else {
-				fileName = "yt-dlp";
-			}
-		} else if (toolType.equals("ffmpeg")) {
-			if (os.contains("win"))
-				fileName = "ffmpeg.exe";
-			else if (os.contains("mac")) {
-				fileName = "ffmpeg-macos";
-			} else {
-				if (arch.contains("aarch64") || arch.contains("arm"))
-					fileName = "ffmpeg-linux-arm64";
-				else
-					fileName = "ffmpeg-linux-x64";
-			}
-		}
-
-		// Expand search range
-		String projectRoot = System.getProperty("user.dir");
-		String jarDir = projectRoot;
-
-		try {
-			File jarPath = new File(
-					NeccessaryToolsAdapter.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-			jarDir = jarPath.getParent();
-		} catch (Exception ignored) {
-		}
-
-		File toolInDevFolder = new File(projectRoot + File.separator + "tools" + File.separator + fileName);
-		if (toolInDevFolder.exists()) {
-			return toolInDevFolder.getAbsolutePath();
-		}
-
-		File toolInJarDir = new File(jarDir + File.separator + fileName);
-		if (toolInJarDir.exists()) {
-			return toolInJarDir.getAbsolutePath();
-		}
-
-		return jarDir + File.separator + fileName;
+		return ToolPaths.get(toolType);
 	}
 
 	@Override
@@ -90,7 +43,8 @@ public class NeccessaryToolsAdapter implements DownloadStrategy {
 	}
 
 	@Override
-	public void startDownload(String url, String savePath, String format, Observer o) {
+	public void startDownload(String url, String savePath, String format, String trimSection, boolean preciseCut,
+			Observer o) {
 		try {
 			System.out.println("Processing format: " + format.toUpperCase() + "...");
 
@@ -113,6 +67,17 @@ public class NeccessaryToolsAdapter implements DownloadStrategy {
 			commandList.add("10");
 			commandList.add("--retry-sleep");
 			commandList.add("3");
+
+			if (trimSection != null && !trimSection.isBlank()) {
+				System.out.println("Trimming section: " + trimSection + (preciseCut ? " (precise)" : " (fast)"));
+				commandList.add("--download-sections");
+				commandList.add(trimSection);
+				// By default cut on keyframes with a stream copy (fast). Only re-encode
+				// when the user explicitly asks for a frame-accurate cut.
+				if (preciseCut) {
+					commandList.add("--force-keyframes-at-cuts");
+				}
+			}
 
 			if (format.equalsIgnoreCase("mp4")) {
 				commandList.add("-f");

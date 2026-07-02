@@ -1,7 +1,9 @@
 package com.videodownloader.controller;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -53,8 +55,9 @@ public class DependencyManager {
 			} catch (Exception e) {
 				System.err.println("Can not install yt-dlp: " + e.getMessage());
 			}
-		} else
-			return;
+		} else {
+			selfUpdateYtDlp(ytDlpFile);
+		}
 		if (ytDlpFile.exists()) {
 			boolean granted = ytDlpFile.setExecutable(true);
 			if (!granted && !os.contains("win")) {
@@ -67,5 +70,26 @@ public class DependencyManager {
 		} else {
 			fFmpegFile.setExecutable(true);
 		}
+	}
+
+	// Site extractors break constantly; keep yt-dlp fresh without blocking startup.
+	private static void selfUpdateYtDlp(File ytDlpFile) {
+		Thread updater = new Thread(() -> {
+			try {
+				System.out.println("[Updater] Checking for yt-dlp updates...");
+				Process p = new ProcessBuilder(ytDlpFile.getAbsolutePath(), "-U").redirectErrorStream(true).start();
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+					String line;
+					while ((line = reader.readLine()) != null) {
+						System.out.println("[Updater] " + line);
+					}
+				}
+				p.waitFor();
+			} catch (Exception e) {
+				System.err.println("[Updater] yt-dlp self-update failed: " + e.getMessage());
+			}
+		});
+		updater.setDaemon(true);
+		updater.start();
 	}
 }

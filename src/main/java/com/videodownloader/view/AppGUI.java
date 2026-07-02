@@ -25,8 +25,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 
 import com.videodownloader.controller.BrowserController;
 import com.videodownloader.controller.DownloadManager;
@@ -37,8 +41,10 @@ public class AppGUI extends JFrame {
 	private JButton btnClipboard, btnHunt, btnImportApi;
 	private DefaultTableModel tableModel;
 	private JTable queueTable;
+	private TableRowSorter<DefaultTableModel> sorter;
+	private JTextField searchField;
 	private JTextArea consoleLog;
-	private JButton btnDownloadSelected;
+	private JButton btnDownloadSelected, btnClearAll;
 
 	private final DownloadManager manager;
 
@@ -48,7 +54,7 @@ public class AppGUI extends JFrame {
 	public AppGUI(DownloadManager manager) {
 		this.manager = manager;
 
-		setTitle("Video Downloader - v1.0.2");
+		setTitle("Video Downloader - v1.0.3");
 		setSize(1050, 660);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
@@ -83,14 +89,67 @@ public class AppGUI extends JFrame {
 		JPanel queuePanel = new JPanel(new BorderLayout());
 		queuePanel.setBorder(BorderFactory.createTitledBorder("Download Queue"));
 
-		String[] columns = { "Ord No.", "Link video/playlist", "Format", "Status", "Progress", " " };
+		JPanel searchPanel = new JPanel(new BorderLayout(8, 0));
+		searchPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
+		searchField = new JTextField();
+		searchField.putClientProperty("JTextField.placeholderText", "Search by name or link...");
+		searchField.setToolTipText("Filter the download queue");
+		searchPanel.add(new JLabel("Search:"), BorderLayout.WEST);
+		searchPanel.add(searchField, BorderLayout.CENTER);
+		queuePanel.add(searchPanel, BorderLayout.NORTH);
+
+		String[] columns = { "No.", "Name / Link", "Format", "Status", "Progress", " " };
 		tableModel = new DefaultTableModel(columns, 0) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				return false;
 			}
 		};
-		queueTable = new JTable(tableModel);
+		queueTable = new JTable(tableModel) {
+			@Override
+			public String getToolTipText(MouseEvent e) {
+				int r = rowAtPoint(e.getPoint());
+				int c = columnAtPoint(e.getPoint());
+				if (r >= 0 && c == 1) {
+					Object v = getValueAt(r, c);
+					return v == null ? null : v.toString();
+				}
+				return super.getToolTipText(e);
+			}
+		};
+
+		sorter = new TableRowSorter<>(tableModel);
+		for (int i = 0; i < tableModel.getColumnCount(); i++) {
+			sorter.setSortable(i, false);
+		}
+		queueTable.setRowSorter(sorter);
+
+		searchField.getDocument().addDocumentListener(new DocumentListener() {
+			private void applyFilter() {
+				String query = searchField.getText().trim();
+				if (query.isEmpty()) {
+					sorter.setRowFilter(null);
+				} else {
+					sorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(query), 1));
+				}
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent e) {
+				applyFilter();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent e) {
+				applyFilter();
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e) {
+				applyFilter();
+			}
+		});
+
 		queueTable.setRowHeight(30);
 		queueTable.setShowHorizontalLines(false);
 		queueTable.setShowVerticalLines(false);
@@ -155,11 +214,12 @@ public class AppGUI extends JFrame {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				int column = queueTable.columnAtPoint(e.getPoint());
-				int row = queueTable.rowAtPoint(e.getPoint());
+				int viewRow = queueTable.rowAtPoint(e.getPoint());
 
-				if (row < queueTable.getRowCount() && row >= 0 && column == 5) {
+				if (viewRow < queueTable.getRowCount() && viewRow >= 0 && column == 5) {
+					int row = queueTable.convertRowIndexToModel(viewRow);
 					String status = tableModel.getValueAt(row, 3).toString();
-					if (status.equals("Downloading...")) {
+					if (status.equals("Downloading...") || status.equals("Loading...")) {
 						logToConsole("=> [System] Cannot remove an active download!");
 						return;
 					}
@@ -200,7 +260,14 @@ public class AppGUI extends JFrame {
 		btnDownloadSelected.setToolTipText("Start downloading all selected items in the queue");
 		btnDownloadSelected.putClientProperty("JButton.buttonType", "roundRect");
 
-		actionPanel.add(btnDownloadSelected, BorderLayout.NORTH);
+		btnClearAll = new JButton("Clear All");
+		btnClearAll.setToolTipText("Remove every item from the queue (active downloads are kept)");
+		btnClearAll.putClientProperty("JButton.buttonType", "roundRect");
+
+		JPanel actionButtons = new JPanel(new java.awt.GridLayout(1, 2, 8, 0));
+		actionButtons.add(btnClearAll);
+		actionButtons.add(btnDownloadSelected);
+		actionPanel.add(actionButtons, BorderLayout.NORTH);
 
 		bottomContainer.add(consolePanel, BorderLayout.CENTER);
 		bottomContainer.add(actionPanel, BorderLayout.SOUTH);
@@ -229,11 +296,40 @@ public class AppGUI extends JFrame {
 			}
 			logToConsole("=> Starting " + selectedRows.length + " selected items...");
 
-			for (int row : selectedRows) {
+			for (int viewRow : selectedRows) {
+				int row = queueTable.convertRowIndexToModel(viewRow);
 				manager.enqueuePendingTask(row);
 				updateQueueItemStatus(row, "In Queue", "0%");
 			}
 			queueTable.clearSelection();
+		});
+
+		btnClearAll.addActionListener(e -> {
+			if (tableModel.getRowCount() == 0) {
+				logToConsole("=> [System] Queue is already empty.");
+				return;
+			}
+			int confirm = JOptionPane.showConfirmDialog(this,
+					"Remove all items from the queue?\n(Active downloads will be kept)", "Clear All",
+					JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+			if (confirm != JOptionPane.YES_OPTION) {
+				return;
+			}
+
+			int removed = 0;
+			for (int row = tableModel.getRowCount() - 1; row >= 0; row--) {
+				String status = tableModel.getValueAt(row, 3).toString();
+				if (status.equals("Downloading...") || status.equals("Loading...")) {
+					continue;
+				}
+				manager.removePendingTask(row);
+				tableModel.removeRow(row);
+				removed++;
+			}
+			for (int i = 0; i < tableModel.getRowCount(); i++) {
+				tableModel.setValueAt(i + 1, i, 0);
+			}
+			logToConsole("=> [System] Cleared " + removed + " item(s) from queue.");
 		});
 
 		btnImportApi.addActionListener(e -> {
@@ -315,6 +411,14 @@ public class AppGUI extends JFrame {
 		int stt = tableModel.getRowCount() + 1;
 		tableModel.addRow(new Object[] { stt, url, format, status, "0%", "" });
 		return tableModel.getRowCount() - 1;
+	}
+
+	public void updateQueueItemName(int rowIndex, String name) {
+		SwingUtilities.invokeLater(() -> {
+			if (rowIndex >= 0 && rowIndex < tableModel.getRowCount() && name != null && !name.isBlank()) {
+				tableModel.setValueAt(name, rowIndex, 1);
+			}
+		});
 	}
 
 	public void updateQueueItemStatus(int rowIndex, String status, String progress) {
