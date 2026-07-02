@@ -7,23 +7,26 @@ Before running the application, ensure your system meets the following minor req
 * **Google Chrome:** Required specifically if you want to use the browser extension "Hunting" mode.
 * **No Java installation needed!** A pre-configured Java 21 Runtime Environment (JRE) is already embedded inside the package.
 
-## Step 2: Download the App
+## Step 2: Installing the App
 1. Navigate to the **[Releases](../../releases)** page of this repository.
 2. Download the compressed archive that matches your Operating System:
-   * **Windows:** Download `VideoDownloader-v1.0.3-Win.zip`
+   * **Windows:** Install `VideoDownloader-v1.0.3-Win.zip`
    * **MacOS:**
-    	* Download `VideoDownloader-v1.0.3-Mac-Intel.tar.gz` (Supporting to Mac's x64 architecture)
-    	* Download `VideoDownloader-v1.0.3-Mac-AppleSilicon.tar.gz` (Supporting to Mac's ARM architecture)
+    	* Install `VideoDownloader-v1.0.3-Mac-Intel.tar.gz` (Supporting to Mac's x64 architecture)
+    	* Install `VideoDownloader-v1.0.3-Mac-AppleSilicon.tar.gz` (Supporting to Mac's ARM architecture)
    * **Linux:**
-   		* Download `VideoDownloader-v1.0.3-Linux-x64.tar.gz` (Supporting to x64 architecture too)
-     	* Download `VideoDownloader-v1.0.3-Linux-ARM.tar.gz` (Supporting to ARM architecture too)
+   		* Install `VideoDownloader-v1.0.3-Linux-x64.tar.gz` (Supporting to x64 architecture too)
+     	* Install `VideoDownloader-v1.0.3-Linux-ARM.tar.gz` (Supporting to ARM architecture too)
+   * **Android:**
+      * Install `VideoDownloader-v1.0.3.apk` (standalone app — hunts and downloads directly on the phone)
+      * Or, if you just want to send links from your phone to the desktop app, install `VideoDownloader-v1.0.3-remote-desktop.apk` (companion app)
 
 ## 📂 Package Structure (What's Inside)
 Once extracted, your installation folder will contain a clean, pre-configured ecosystem:
-* ⚙️ **Core App:** `VideoDownloader.jar` (The main compiled application).
-* 🚀 **Launcher Script:** `run.bat` (Windows) or `run.sh` (Mac/Linux) used to trigger the application.
-* ☕ **Embedded Runtime:** Pre-bundled isolated JRE 21 environments tailored specifically for your platform architecture.
-* 🛠️ **Engine Tools:** Built-in binaries (`yt-dlp`, `ffmpeg`, `node`) required natively for streaming, downloading, and converting.
+* **Core App:** `VideoDownloader.jar` (The main compiled application).
+* **Launcher Script:** `run.bat` (Windows) or `run.sh` (Mac/Linux) used to trigger the application.
+* **Embedded Runtime:** Pre-bundled isolated JRE 21 environments tailored specifically for your platform architecture.
+* **Engine Tools:** Built-in binaries (`yt-dlp`, `ffmpeg`) required natively for streaming, downloading, and converting.
 
 ---
 
@@ -51,3 +54,5 @@ Unix-based systems require explicit permission to execute launcher scripts.
 	```bash
 	./run.sh
 	```
+### For Android Users
+Just installing our APKs file and allow install from strange source.

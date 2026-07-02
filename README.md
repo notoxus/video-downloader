@@ -2,6 +2,8 @@
 
 ![Downloads](https://img.shields.io/github/downloads/notoxus/video-downloader/total)
 
+[How to install the App](Installation.md)
+
 A desktop app for capturing and downloading HLS/DASH video streams, with built-in support for YouTube, TikTok, Facebook, Instagram, and many more.
 
 ---
