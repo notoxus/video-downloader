@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Rounded background -->
+    <path
+        android:fillColor="#4285F4"
+        android:pathData="M8,0 L40,0 A8,8 0 0 1 48,8 L48,40 A8,8 0 0 1 40,48 L8,48 A8,8 0 0 1 0,40 L0,8 A8,8 0 0 1 8,0 Z" />
+    <!-- Monitor -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,12 L36,12 A2,2 0 0 1 38,14 L38,28 A2,2 0 0 1 36,30 L27,30 L27,33 L31,33 L31,36 L17,36 L17,33 L21,33 L21,30 L12,30 A2,2 0 0 1 10,28 L10,14 A2,2 0 0 1 12,12 Z" />
+    <!-- Play triangle on the screen -->
+    <path
+        android:fillColor="#4285F4"
+        android:pathData="M21,17 L29,21 L21,25 Z" />
+</vector>

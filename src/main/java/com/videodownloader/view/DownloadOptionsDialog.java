@@ -19,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 import com.videodownloader.controller.MediaProbe;
@@ -137,7 +138,9 @@ public class DownloadOptionsDialog {
 		panel.add(cbTrim);
 		panel.add(trimBox);
 
-		int result = JOptionPane.showConfirmDialog(null, panel, "Download Options", JOptionPane.OK_CANCEL_OPTION,
+		JScrollPane scrollPane = new JScrollPane(panel);
+		scrollPane.setBorder(javax.swing.BorderFactory.createEmptyBorder());
+		int result = JOptionPane.showConfirmDialog(null, scrollPane, "Download Options", JOptionPane.OK_CANCEL_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 		if (result != JOptionPane.OK_OPTION) {
 			return null;

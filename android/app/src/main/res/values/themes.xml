@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base platform theme (status bar / window chrome) before Compose's MaterialTheme
+         takes over the actual UI. Kept dependency-free — no Material Components library
+         needed here since all real theming happens in Compose. -->
+    <style name="Theme.VideoDownloader" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">true</item>
+    </style>
+</resources>

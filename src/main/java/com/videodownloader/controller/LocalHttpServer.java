@@ -2,8 +2,11 @@ package com.videodownloader.controller;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 import java.util.concurrent.Executors;
 
 import com.google.gson.JsonObject;
@@ -12,6 +15,11 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+/**
+ * Local HTTP endpoint with two clients:
+ * - the Chrome hunting extension posts captured stream URLs to /capture (localhost)
+ * - the mobile companion app posts shared links to /add over the LAN
+ */
 public class LocalHttpServer {
 	public static final int DEFAULT_PORT = 8765;
 	private final DownloadManager manager;
@@ -23,22 +31,108 @@ public class LocalHttpServer {
 
 	public void start() {
 		try {
-			server = HttpServer.create(new InetSocketAddress("localhost", DEFAULT_PORT), 0);
+			// Bind on all interfaces so the phone companion can reach us over Wi-Fi.
+			server = HttpServer.create(new InetSocketAddress("0.0.0.0", DEFAULT_PORT), 0);
 			server.createContext("/capture", new CaptureHandler());
+			server.createContext("/add", new AddLinkHandler());
+			server.createContext("/ping", new PingHandler());
 			server.setExecutor(Executors.newCachedThreadPool());
 			server.start();
 			System.out.println("Open at " + DEFAULT_PORT + "port. Extension had already listened!");
+			logCompanionAddress();
 		} catch (IOException e) {
 			System.err.println("Couldn't start Local Server: " + e.getMessage());
+		}
+	}
+
+	/** Prints the LAN address the phone companion should use. */
+	private void logCompanionAddress() {
+		String ip = findLanAddress();
+		if (ip != null) {
+			System.out.println("[Companion] Phone companion can reach this PC at: http://" + ip + ":" + DEFAULT_PORT);
+		}
+	}
+
+	private static String findLanAddress() {
+		try {
+			Enumeration<NetworkInterface> ifaces = NetworkInterface.getNetworkInterfaces();
+			while (ifaces.hasMoreElements()) {
+				NetworkInterface iface = ifaces.nextElement();
+				if (!iface.isUp() || iface.isLoopback() || iface.isVirtual()) {
+					continue;
+				}
+				Enumeration<InetAddress> addrs = iface.getInetAddresses();
+				while (addrs.hasMoreElements()) {
+					InetAddress addr = addrs.nextElement();
+					if (addr.isSiteLocalAddress() && addr.getHostAddress().indexOf(':') < 0) {
+						return addr.getHostAddress();
+					}
+				}
+			}
+		} catch (Exception ignored) {
+		}
+		return null;
+	}
+
+	private static void respondJson(HttpExchange ex, int status, String json) throws IOException {
+		byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+		ex.getResponseHeaders().set("Content-Type", "application/json");
+		ex.sendResponseHeaders(status, bytes.length);
+		try (OutputStream os = ex.getResponseBody()) {
+			os.write(bytes);
+		}
+	}
+
+	private static void applyCors(HttpExchange ex) {
+		ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
+		ex.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+		ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+	}
+
+	/** Lets the companion app verify it found the right PC. */
+	private class PingHandler implements HttpHandler {
+		@Override
+		public void handle(HttpExchange ex) throws IOException {
+			applyCors(ex);
+			respondJson(ex, 200, "{\"app\":\"VideoDownloader\",\"status\":\"ok\"}");
+		}
+	}
+
+	/** Receives links shared from the phone; goes through the normal analyze flow. */
+	private class AddLinkHandler implements HttpHandler {
+		@Override
+		public void handle(HttpExchange ex) throws IOException {
+			applyCors(ex);
+			if ("OPTIONS".equalsIgnoreCase(ex.getRequestMethod())) {
+				ex.sendResponseHeaders(204, -1);
+				return;
+			}
+			if (!"POST".equalsIgnoreCase(ex.getRequestMethod())) {
+				ex.sendResponseHeaders(405, -1);
+				return;
+			}
+
+			String body = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+			try {
+				JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+				String url = json.get("url").getAsString();
+				String from = ex.getRemoteAddress().getAddress().getHostAddress();
+
+				System.out.println("\n[Companion] Link from phone (" + from + "): " + url);
+				respondJson(ex, 200, "{\"status\":\"ok\"}");
+
+				manager.processLink(url);
+			} catch (Exception e) {
+				System.err.println("[Companion] Bad request: " + e.getMessage());
+				respondJson(ex, 400, "{\"status\":\"error\"}");
+			}
 		}
 	}
 
 	private class CaptureHandler implements HttpHandler {
 		@Override
 		public void handle(HttpExchange ex) throws IOException {
-			ex.getResponseHeaders().set("Access-Control-Allow-Origin", "*");
-			ex.getResponseHeaders().set("Access-Control-Allow-Methods", "POST, OPTIONS");
-			ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
+			applyCors(ex);
 
 			if ("OPTIONS".equalsIgnoreCase(ex.getRequestMethod())) {
 				ex.sendResponseHeaders(204, -1);
@@ -52,24 +146,13 @@ public class LocalHttpServer {
 					String streamUrl = json.get("url").getAsString();
 
 					System.out.println("\n[Extension] Captured URL: " + streamUrl);
-
-					String response = "{\"status\":\"ok\"}";
-					ex.getResponseHeaders().set("Content-Type", "application/json");
-					ex.sendResponseHeaders(200, response.getBytes().length);
-					try (OutputStream os = ex.getResponseBody()) {
-						os.write(response.getBytes());
-					}
+					respondJson(ex, 200, "{\"status\":\"ok\"}");
 
 					manager.processAutoCapture(streamUrl);
 
 				} catch (Exception e) {
 					System.err.println("[Error] Failed to process request: " + e.getMessage());
-					String errorResponse = "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}";
-					ex.getResponseHeaders().set("Content-Type", "application/json");
-					ex.sendResponseHeaders(400, errorResponse.getBytes().length);
-					try (OutputStream os = ex.getResponseBody()) {
-						os.write(errorResponse.getBytes());
-					}
+					respondJson(ex, 400, "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}");
 				}
 			} else {
 				ex.sendResponseHeaders(405, -1); // Method Not Allowed
