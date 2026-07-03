@@ -4,7 +4,7 @@ public class VideoInfo {
 	private String id;
 	private String title;
 	private String webpage_url;
-	private double duration; // seconds; 0 when unknown
+	private double duration;
 
 	public VideoInfo(String id, String title, String webpage_url) {
 		this.id = id;
@@ -24,7 +24,7 @@ public class VideoInfo {
 		return webpage_url;
 	}
 
-	/** Duration in whole seconds, or 0 if yt-dlp did not report it. */
+	// Duration in whole seconds
 	public int getDurationSeconds() {
 		return (int) Math.round(duration);
 	}

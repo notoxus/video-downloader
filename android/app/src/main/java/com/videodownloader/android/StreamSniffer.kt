@@ -11,10 +11,22 @@ import android.webkit.WebViewClient
  * extension, but with no extension setup required.
  */
 class StreamSniffer(
-    private val onStreamFound: (String) -> Unit
+    private val onStreamFound: (String) -> Unit,
+    private val onPageStarted: (String) -> Unit = {},
+    private val onPageFinished: (String) -> Unit = {}
 ) : WebViewClient() {
 
     private val seen = HashSet<String>()
+
+    override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
+        super.onPageStarted(view, url, favicon)
+        onPageStarted(url)
+    }
+
+    override fun onPageFinished(view: WebView, url: String) {
+        super.onPageFinished(view, url)
+        onPageFinished(url)
+    }
 
     override fun shouldInterceptRequest(
         view: WebView,

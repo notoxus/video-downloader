@@ -14,10 +14,6 @@ import java.util.List;
 
 import javax.swing.JComponent;
 
-/**
- * A horizontal slider with two draggable thumbs defining a [low, high] range
- * over an integer domain [0, max]. Fires listeners whenever either thumb moves.
- */
 public class RangeSlider extends JComponent {
 	private static final long serialVersionUID = 1L;
 
@@ -27,7 +23,7 @@ public class RangeSlider extends JComponent {
 
 	private static final int THUMB_R = 8;
 	private static final int PAD = THUMB_R + 2;
-	private int dragging = 0; // 0 = none, 1 = low, 2 = high
+	private int dragging = 0;
 
 	private final List<Runnable> listeners = new ArrayList<>();
 
@@ -37,9 +33,9 @@ public class RangeSlider extends JComponent {
 	private final Color thumbBorder = new Color(66, 133, 244);
 
 	public RangeSlider() {
-		setPreferredSize(new Dimension(400, 36));
-		setMinimumSize(new Dimension(120, 36));
-		setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+		setPreferredSize(new Dimension(400, 48));
+		setMinimumSize(new Dimension(120, 48));
+		setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
 
 		MouseAdapter ma = new MouseAdapter() {
 			@Override
@@ -137,12 +133,21 @@ public class RangeSlider extends JComponent {
 		fire();
 	}
 
+	private String fmt(int totalSeconds) {
+		if (totalSeconds < 0) totalSeconds = 0;
+		int h = totalSeconds / 3600;
+		int m = (totalSeconds % 3600) / 60;
+		int s = totalSeconds % 60;
+		if (h > 0) return String.format("%d:%02d:%02d", h, m, s);
+		return String.format("%d:%02d", m, s);
+	}
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g.create();
 		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-		int cy = getHeight() / 2;
+		int cy = getHeight() / 2 + 6;
 		int lowX = valueToX(low);
 		int highX = valueToX(high);
 
@@ -158,17 +163,25 @@ public class RangeSlider extends JComponent {
 		g2.drawLine(lowX, cy, highX, cy);
 
 		// Thumbs
-		drawThumb(g2, lowX, cy);
-		drawThumb(g2, highX, cy);
+		drawThumb(g2, lowX, cy, low, on);
+		drawThumb(g2, highX, cy, high, on);
 
 		g2.dispose();
 	}
 
-	private void drawThumb(Graphics2D g2, int x, int cy) {
+	private void drawThumb(Graphics2D g2, int x, int cy, int val, boolean on) {
 		g2.setColor(thumbColor);
 		g2.fillOval(x - THUMB_R, cy - THUMB_R, THUMB_R * 2, THUMB_R * 2);
 		g2.setColor(thumbBorder);
 		g2.setStroke(new BasicStroke(2));
 		g2.drawOval(x - THUMB_R, cy - THUMB_R, THUMB_R * 2, THUMB_R * 2);
+
+		if (on) {
+			String timeStr = fmt(val);
+			g2.setFont(g2.getFont().deriveFont(11f));
+			int strW = g2.getFontMetrics().stringWidth(timeStr);
+			g2.setColor(Color.WHITE);
+			g2.drawString(timeStr, x - strW / 2, cy - THUMB_R - 4);
+		}
 	}
 }

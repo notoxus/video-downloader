@@ -20,6 +20,7 @@ import com.videodownloader.model.VideoInfo;
 import com.videodownloader.view.AppGUI;
 import com.videodownloader.view.DownloadOptionsDialog;
 import com.videodownloader.view.FolderSelector;
+import com.videodownloader.view.TrimDialog;
 
 public class DownloadManager implements Observer {
 	private DownloadStrategy strategy;
@@ -159,7 +160,7 @@ public class DownloadManager implements Observer {
 		Toolkit.getDefaultToolkit().beep();
 
 		DownloadOptionsDialog.Options opts = DownloadOptionsDialog
-				.show("Video Hunter has caught a download link!\n\nTarget: " + url, url, 0, url);
+				.show("Video Hunter has caught a download link!\n\nTarget: " + url);
 
 		if (opts != null) {
 			System.out.println("\n[Auto-Capture] Preparing, waiting for user to start...");
@@ -168,10 +169,9 @@ public class DownloadManager implements Observer {
 			if (savePath != null && !savePath.isEmpty()) {
 				SwingUtilities.invokeLater(() -> {
 					if (gui != null) {
-						String formatLabel = opts.format.toUpperCase() + (opts.trimSection != null ? " ✂" : "");
+						String formatLabel = opts.format.toUpperCase();
 						int newRow = gui.addQueueItem(url, formatLabel, "Waiting...");
-						pendingTasks.put(newRow,
-								new DownloadTask(url, savePath, opts.format, opts.trimSection, opts.preciseCut, newRow));
+						pendingTasks.put(newRow, new DownloadTask(url, savePath, opts.format, null, false, newRow));
 						gui.logToConsole(
 								"=> [Hunter] Added captured link to list (Row " + newRow + "). Ready to download.");
 						resolveTitleAsync(url, newRow);
@@ -185,7 +185,6 @@ public class DownloadManager implements Observer {
 		}
 	}
 
-	// Best-effort: swap the raw URL in the queue for the video title once known.
 	private void resolveTitleAsync(String url, int rowIndex) {
 		new Thread(() -> {
 			try {
@@ -196,6 +195,23 @@ public class DownloadManager implements Observer {
 			} catch (Exception ignored) {
 			}
 		}).start();
+	}
+
+	public void openTrimDialog(int row) {
+		DownloadTask task = pendingTasks.get(row);
+		if (task == null)
+			return;
+
+		boolean isAudio = task.format.equalsIgnoreCase("mp3");
+		TrimDialog.TrimOptions trimOpts = TrimDialog.show("Trim Video", task.url, 0, task.url, isAudio);
+		if (trimOpts != null) {
+			task.trimSection = trimOpts.trimSection;
+			task.preciseCut = trimOpts.preciseCut;
+			if (gui != null) {
+				String formatLabel = task.format.toUpperCase() + (task.trimSection != null ? " ✂" : "");
+				gui.updateQueueItemFormat(row, formatLabel);
+			}
+		}
 	}
 
 	public void processLink(String url) {
@@ -224,28 +240,21 @@ public class DownloadManager implements Observer {
 						if (savePath == null || savePath.isEmpty())
 							return;
 
-						// Trimming only makes sense for a single video; a playlist has no shared timeline.
-						int durationHint = (links.size() == 1) ? info.getDurationSeconds() : 0;
-						String previewUrl = (links.size() == 1) ? links.get(0) : null;
 						DownloadOptionsDialog.Options opts = DownloadOptionsDialog
-								.show("Choose download options for:\n" + displayTitle, previewUrl, durationHint,
-										previewUrl);
+								.show("Choose download options for:\n" + displayTitle);
 						if (opts == null)
 							return;
 
-						String formatLabel = opts.format.toUpperCase() + (opts.trimSection != null ? " ✂" : "");
-
-						// Cap async title lookups: each one spawns a yt-dlp process.
+						String formatLabel = opts.format.toUpperCase();
 						boolean resolveTitles = links.size() <= 20;
 
 						for (String link : links) {
 							String display = (links.size() == 1 && info.getTitle() != null
 									&& !info.getTitle().isBlank()) ? info.getTitle() : link;
-							int newRow = (gui != null) ? gui.addQueueItem(display, formatLabel, "Waiting...")
-									: -1;
+							int newRow = (gui != null) ? gui.addQueueItem(display, formatLabel, "Waiting...") : -1;
 							if (newRow != -1) {
-								pendingTasks.put(newRow, new DownloadTask(link, savePath, opts.format, opts.trimSection,
-										opts.preciseCut, newRow));
+								pendingTasks.put(newRow,
+										new DownloadTask(link, savePath, opts.format, null, false, newRow));
 								if (links.size() > 1 && resolveTitles) {
 									resolveTitleAsync(link, newRow);
 								}
@@ -314,7 +323,7 @@ public class DownloadManager implements Observer {
 		String url;
 		String savePath;
 		String format;
-		String trimSection; // null = download the full video
+		String trimSection; // null = full video
 		boolean preciseCut;
 		int rowIndex;
 

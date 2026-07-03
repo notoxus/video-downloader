@@ -2,7 +2,6 @@ package com.videodownloader.controller;
 
 import java.io.File;
 
-/** Locates the bundled yt-dlp / ffmpeg binaries for the current OS and architecture. */
 public final class ToolPaths {
 
 	private ToolPaths() {

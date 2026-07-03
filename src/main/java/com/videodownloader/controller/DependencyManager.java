@@ -13,41 +13,27 @@ public class DependencyManager {
 	public static void checkAndDownloadDependencies() {
 		String os = System.getProperty("os.name").toLowerCase();
 		String arch = System.getProperty("os.arch").toLowerCase();
-		String dir = System.getProperty("user.dir");
-		String ytDlpName = "";
-		String fFmpegName = "";
+		String githubYtDlpName = "";
 
 		if (os.contains("win")) {
-			// windows
-			ytDlpName = "yt-dlp.exe";
-			fFmpegName = "ffmpeg.exe";
+			githubYtDlpName = "yt-dlp.exe";
 		} else if (os.contains("mac")) {
-			// mac os
-			ytDlpName = "yt-dlp_macos";
-			if (arch.contains("aarch64") || arch.contains("arm")) {
-				// Mac with apple silicon chipset, using arm architecture
-				fFmpegName = "ffmpeg-darwin-arm64";
-			} else {
-				// Mac intel chipset
-				fFmpegName = "ffmpeg-darwin-x64";
-			}
+			githubYtDlpName = "yt-dlp_macos";
 		} else {
-			// Same to linux
 			if (arch.contains("aarch64") || arch.contains("arm")) {
-				ytDlpName = "yt-dlp_linux_aarch64";
-				fFmpegName = "ffmpeg-linux-arm64";
+				githubYtDlpName = "yt-dlp_linux_aarch64";
 			} else {
-				ytDlpName = "yt-dlp_linux";
-				fFmpegName = "ffmpeg-linux-x64";
+				githubYtDlpName = "yt-dlp_linux";
 			}
 		}
 
-		File ytDlpFile = new File(dir, ytDlpName);
-		File fFmpegFile = new File(dir, fFmpegName);
+		File ytDlpFile = new File(ToolPaths.get("ytdlp"));
+		File fFmpegFile = new File(ToolPaths.get("ffmpeg"));
+
 		if (!ytDlpFile.exists()) {
 			System.out.println("yt-dlp installing...");
 			try {
-				String downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/" + ytDlpName;
+				String downloadUrl = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/" + githubYtDlpName;
 				InputStream in = new URI(downloadUrl).toURL().openStream();
 				Files.copy(in, ytDlpFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 				ytDlpFile.setExecutable(true);
@@ -65,7 +51,7 @@ public class DependencyManager {
 			}
 		}
 		if (!fFmpegFile.exists()) {
-			System.out.println("Warning: Not found " + fFmpegName + "!");
+			System.out.println("Warning: Not found ffmpeg!");
 			System.out.println("Audio and video may be separated");
 		} else {
 			fFmpegFile.setExecutable(true);

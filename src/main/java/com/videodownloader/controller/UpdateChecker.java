@@ -21,7 +21,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class UpdateChecker {
-	private static final String CURRENT_VERSION = "v1.0.3";
+	private static final String CURRENT_VERSION = "v1.0.4";
 
 	private static final String REPO_OWNER = "notoxus";
 	private static final String REPO_NAME = "video-downloader";
@@ -62,7 +62,6 @@ public class UpdateChecker {
 		}).start();
 	}
 
-	/** Returns true if {@code latest} is strictly newer than {@code current} (semver-ish). */
 	private static boolean isNewer(String latest, String current) {
 		try {
 			int[] a = parseVersion(latest);
@@ -76,7 +75,6 @@ public class UpdateChecker {
 			}
 			return false;
 		} catch (Exception e) {
-			// Fall back to plain inequality if the tags aren't numeric.
 			return !latest.equals(current);
 		}
 	}
@@ -91,7 +89,6 @@ public class UpdateChecker {
 		return nums;
 	}
 
-	/** Picks the release asset matching the current OS/architecture, or null if none matches. */
 	private static String findPlatformAssetUrl(JsonObject release) {
 		String suffix = platformAssetSuffix();
 		if (suffix == null || !release.has("assets")) {

@@ -15,11 +15,6 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-/**
- * Local HTTP endpoint with two clients:
- * - the Chrome hunting extension posts captured stream URLs to /capture (localhost)
- * - the mobile companion app posts shared links to /add over the LAN
- */
 public class LocalHttpServer {
 	public static final int DEFAULT_PORT = 8765;
 	private final DownloadManager manager;
@@ -31,7 +26,6 @@ public class LocalHttpServer {
 
 	public void start() {
 		try {
-			// Bind on all interfaces so the phone companion can reach us over Wi-Fi.
 			server = HttpServer.create(new InetSocketAddress("0.0.0.0", DEFAULT_PORT), 0);
 			server.createContext("/capture", new CaptureHandler());
 			server.createContext("/add", new AddLinkHandler());
@@ -45,7 +39,6 @@ public class LocalHttpServer {
 		}
 	}
 
-	/** Prints the LAN address the phone companion should use. */
 	private void logCompanionAddress() {
 		String ip = findLanAddress();
 		if (ip != null) {
@@ -89,7 +82,6 @@ public class LocalHttpServer {
 		ex.getResponseHeaders().set("Access-Control-Allow-Headers", "Content-Type");
 	}
 
-	/** Lets the companion app verify it found the right PC. */
 	private class PingHandler implements HttpHandler {
 		@Override
 		public void handle(HttpExchange ex) throws IOException {
@@ -98,7 +90,6 @@ public class LocalHttpServer {
 		}
 	}
 
-	/** Receives links shared from the phone; goes through the normal analyze flow. */
 	private class AddLinkHandler implements HttpHandler {
 		@Override
 		public void handle(HttpExchange ex) throws IOException {
@@ -155,7 +146,7 @@ public class LocalHttpServer {
 					respondJson(ex, 400, "{\"status\":\"error\",\"message\":\"" + e.getMessage() + "\"}");
 				}
 			} else {
-				ex.sendResponseHeaders(405, -1); // Method Not Allowed
+				ex.sendResponseHeaders(405, -1);
 			}
 		}
 	}

@@ -5,8 +5,6 @@ import java.io.File;
 import javax.swing.JFileChooser;
 
 public class FolderSelector {
-
-	// Pop up windows manager to choose your own save directory
 	public static String chooseSaveDirectory() {
 		JFileChooser chooser = new JFileChooser();
 

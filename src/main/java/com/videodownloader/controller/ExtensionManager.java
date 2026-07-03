@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 public class ExtensionManager {
-
-    // Bump this version to force-regenerate the extension on existing installs.
     private static final String EXTENSION_VERSION = "1.2";
 
     public static String getExtensionPath() {

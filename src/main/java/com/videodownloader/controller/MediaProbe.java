@@ -10,14 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-/**
- * Best-effort media inspection using the bundled yt-dlp / ffmpeg binaries.
- * Used by the trim dialog to bound the range slider and build a filmstrip.
- * Every method degrades gracefully: failures return 0 / an empty list rather than throwing.
- */
 public class MediaProbe {
-
-	/** Returns the media duration in seconds, or 0 if it can't be determined. */
 	public static int probeDurationSeconds(String url) {
 		try {
 			ProcessBuilder pb = new ProcessBuilder(ToolPaths.get("ytdlp"), "--extractor-args",
@@ -43,10 +36,6 @@ public class MediaProbe {
 		return 0;
 	}
 
-	/**
-	 * Resolves a single direct media URL that ffmpeg can read (muxed if possible).
-	 * Returns null on failure.
-	 */
 	public static String resolveDirectUrl(String url) {
 		try {
 			ProcessBuilder pb = new ProcessBuilder(ToolPaths.get("ytdlp"), "--extractor-args",
@@ -66,11 +55,6 @@ public class MediaProbe {
 		}
 	}
 
-	/**
-	 * Extracts {@code count} evenly-spaced thumbnails across the given duration.
-	 * Runs ffmpeg once per frame with a fast pre-input seek. Returns whatever it manages
-	 * to grab (possibly empty) so the caller can show a partial or no filmstrip.
-	 */
 	public static List<BufferedImage> extractThumbnails(String directUrl, int durationSeconds, int count,
 			String referer) {
 		List<BufferedImage> frames = new ArrayList<>();
@@ -80,7 +64,6 @@ public class MediaProbe {
 
 		String ffmpeg = ToolPaths.get("ffmpeg");
 		for (int i = 0; i < count; i++) {
-			// Sample slightly inside the range so we skip black intros / end cards.
 			double fraction = (i + 0.5) / count;
 			int ts = (int) (durationSeconds * fraction);
 			BufferedImage img = grabFrame(ffmpeg, directUrl, ts, referer);
@@ -102,7 +85,7 @@ public class MediaProbe {
 				cmd.add("Referer: " + referer + "\r\n");
 			}
 			cmd.add("-ss");
-			cmd.add(String.valueOf(timestampSec)); // fast seek before -i
+			cmd.add(String.valueOf(timestampSec));
 			cmd.add("-i");
 			cmd.add(url);
 			cmd.add("-frames:v");
@@ -119,7 +102,6 @@ public class MediaProbe {
 			pb.redirectErrorStream(false);
 			p = pb.start();
 
-			// Drain stderr in the background so ffmpeg never blocks on a full pipe.
 			Process finalP = p;
 			Thread errDrain = new Thread(() -> {
 				try (InputStream es = finalP.getErrorStream()) {

@@ -72,8 +72,6 @@ public class NeccessaryToolsAdapter implements DownloadStrategy {
 				System.out.println("Trimming section: " + trimSection + (preciseCut ? " (precise)" : " (fast)"));
 				commandList.add("--download-sections");
 				commandList.add(trimSection);
-				// By default cut on keyframes with a stream copy (fast). Only re-encode
-				// when the user explicitly asks for a frame-accurate cut.
 				if (preciseCut) {
 					commandList.add("--force-keyframes-at-cuts");
 				}
@@ -129,6 +127,8 @@ public class NeccessaryToolsAdapter implements DownloadStrategy {
 						o.onProgressUpdate(url, percent, speed);
 					} catch (Exception ignored) {
 					}
+				} else if (line.contains("[download]") && line.contains("Destination:") && !preciseCut && trimSection != null) {
+					o.onProgressUpdate(url, 0.0, "Fast Trim (No %)");
 				} else if (line.toLowerCase().contains("error") || line.toLowerCase().contains("warning")) {
 					System.err.println("\n[yt-dlp log] " + line);
 				} else if (line.contains("[Merger]")) {
