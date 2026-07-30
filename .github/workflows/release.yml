@@ -254,19 +254,31 @@ jobs:
   build-android:
     name: Build Android APKs
     runs-on: ubuntu-latest
-    if: ${{ secrets.KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v5
 
+      - name: Check keystore secret
+        id: guard
+        env:
+          SECRET: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$SECRET" ]; then
+            echo "built=false" >> $GITHUB_OUTPUT
+            echo "::warning::KEYSTORE_BASE64 not set — Android build skipped"
+          else
+            echo "built=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Java 17 (Android build)
+        if: steps.guard.outputs.built == 'true'
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Decode keystore from secret
+        if: steps.guard.outputs.built == 'true'
         run: |
-          # Strip headers, footers, and whitespace (handles both certutil and PowerShell base64 formats)
           echo "${{ secrets.KEYSTORE_BASE64 }}" \
             | grep -v '\-\-\-' \
             | tr -d '\r\n ' \
@@ -274,6 +286,7 @@ jobs:
           echo "Keystore size: $(wc -c < keystore/release.jks) bytes"
 
       - name: Write keystore.properties (main app)
+        if: steps.guard.outputs.built == 'true'
         run: |
           cat > android/keystore.properties <<EOF
           storeFile=../keystore/release.jks
@@ -283,6 +296,7 @@ jobs:
           EOF
 
       - name: Write keystore.properties (companion app)
+        if: steps.guard.outputs.built == 'true'
         run: |
           cat > companion-android/keystore.properties <<EOF
           storeFile=../keystore/release.jks
@@ -292,14 +306,17 @@ jobs:
           EOF
 
       - name: Build main APK (signed release)
+        if: steps.guard.outputs.built == 'true'
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Build companion APK (signed release)
+        if: steps.guard.outputs.built == 'true'
         working-directory: companion-android
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename APKs to release filenames
+        if: steps.guard.outputs.built == 'true'
         run: |
           VERSION=${GITHUB_REF_NAME}
           cp android/app/build/outputs/apk/release/app-release.apk \
@@ -308,6 +325,7 @@ jobs:
              "VideoDownloader-${VERSION}-remote-desktop.apk"
 
       - name: Upload APK artifacts
+        if: steps.guard.outputs.built == 'true'
         uses: actions/upload-artifact@v5
         with:
           name: android-apks
