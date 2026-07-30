@@ -6,15 +6,16 @@ on:
       - 'v*.*.*'
 
 jobs:
-  # Build JAR with Ubuntu
+
+  # Build fat jar
   build-jar:
     name: Build fat JAR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -23,27 +24,28 @@ jobs:
         run: mvn package -DskipAssembly=true --no-transfer-progress
 
       - name: Upload fat JAR
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: fat-jar
           path: target/*-jar-with-dependencies.jar
           retention-days: 1
-  # jlink for each runner native
+
+  # Jlink for each runner native
   build-jre-windows:
     name: jlink – Windows x64
     runs-on: windows-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: fat-jar
           path: target/
@@ -66,7 +68,7 @@ jobs:
         run: tools\jre-win\bin\java.exe -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: jre-win
           path: tools/jre-win/
@@ -77,17 +79,17 @@ jobs:
     runs-on: macos-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21 x64 (Intel JDK via Rosetta 2)
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
           architecture: x64
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: fat-jar
           path: target/
@@ -111,7 +113,7 @@ jobs:
           tools/jre-mac-x64/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: jre-mac-x64
           path: tools/jre-mac-x64/
@@ -122,16 +124,16 @@ jobs:
     runs-on: macos-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: fat-jar
           path: target/
@@ -153,7 +155,7 @@ jobs:
         run: tools/jre-mac-arm/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: jre-mac-arm
           path: tools/jre-mac-arm/
@@ -164,16 +166,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: fat-jar
           path: target/
@@ -195,7 +197,7 @@ jobs:
         run: tools/jre-linux-x64/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: jre-linux-x64
           path: tools/jre-linux-x64/
@@ -206,16 +208,16 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: fat-jar
           path: target/
@@ -237,13 +239,76 @@ jobs:
         run: tools/jre-linux-arm/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v5
         with:
           name: jre-linux-arm
           path: tools/jre-linux-arm/
           retention-days: 1
 
-  # Build
+  # Build Android APKs
+  # Need 4 GitHub Secrets:
+  #   KEYSTORE_BASE64
+  #   KEYSTORE_PASSWORD
+  #   KEY_ALIAS
+  #   KEY_PASSWORD
+  build-android:
+    name: Build Android APKs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Java 17 (Android build)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Decode keystore from secret
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore/release.jks
+
+      - name: Write keystore.properties (main app)
+        run: |
+          cat > android/keystore.properties <<EOF
+          storeFile=../keystore/release.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Write keystore.properties (companion app)
+        run: |
+          cat > companion-android/keystore.properties <<EOF
+          storeFile=../keystore/release.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Build main APK (signed release)
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Build companion APK (signed release)
+        working-directory: companion-android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename APKs to release filenames
+        run: |
+          VERSION=${GITHUB_REF_NAME}
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             "VideoDownloader-${VERSION}.apk"
+          cp companion-android/app/build/outputs/apk/release/app-release.apk \
+             "VideoDownloader-${VERSION}-remote-desktop.apk"
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: android-apks
+          path: "VideoDownloader-*.apk"
+          retention-days: 1
+
+  # Create github release
   package-and-release:
     name: Package & Create GitHub Release
     runs-on: ubuntu-latest
@@ -253,49 +318,55 @@ jobs:
       - build-jre-mac-arm
       - build-jre-linux-x64
       - build-jre-linux-arm
+      - build-android
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@v5
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4.7.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download JRE – Windows
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: jre-win
           path: tools/jre-win/
 
       - name: Download JRE – macOS x64
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: jre-mac-x64
           path: tools/jre-mac-x64/
 
       - name: Download JRE – macOS ARM
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: jre-mac-arm
           path: tools/jre-mac-arm/
 
       - name: Download JRE – Linux x64
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: jre-linux-x64
           path: tools/jre-linux-x64/
 
       - name: Download JRE – Linux ARM
-        uses: actions/download-artifact@v4.2.1
+        uses: actions/download-artifact@v5
         with:
           name: jre-linux-arm
           path: tools/jre-linux-arm/
 
-      # Execute permit
+      - name: Download Android APKs
+        uses: actions/download-artifact@v5
+        with:
+          name: android-apks
+          path: apks/
+
       - name: Fix JRE permissions (Mac/Linux)
         run: |
           chmod -R +x tools/jre-mac-x64/bin/ tools/jre-mac-x64/lib/ || true
@@ -303,29 +374,26 @@ jobs:
           chmod -R +x tools/jre-linux-x64/bin/ tools/jre-linux-x64/lib/ || true
           chmod -R +x tools/jre-linux-arm/bin/ tools/jre-linux-arm/lib/ || true
 
-      # Get ver from tag
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-      # Bump version
       - name: Sync pom.xml finalName to tag version
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
           sed -i -E "s|(<finalName>VideoDownloader-v)[0-9]+\.[0-9]+\.[0-9]+(</finalName>)|\1${VERSION}\2|" pom.xml
 
-      - name: Build all platform packages
+      - name: Build all desktop platform packages
         run: mvn package --no-transfer-progress
 
       - name: List generated packages
-        run: ls -lh target/VideoDownloader-*.zip target/VideoDownloader-*.tar.gz || true
+        run: ls -lh target/VideoDownloader-*.zip target/VideoDownloader-*.tar.gz apks/ || true
 
-      # Create Github release and upload artifacts
-      - name: Create GitHub Release & upload assets
+      - name: Create GitHub Release & upload all assets
         uses: softprops/action-gh-release@v2.3.2
         with:
           name: "Video Downloader ${{ github.ref_name }}"
-          draft: true
+          draft: false
           generate_release_notes: true
           files: |
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Win.zip
@@ -333,3 +401,5 @@ jobs:
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Mac-AppleSilicon.tar.gz
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Linux-x64.tar.gz
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Linux-ARM.tar.gz
+            apks/VideoDownloader-${{ github.ref_name }}.apk
+            apks/VideoDownloader-${{ github.ref_name }}-remote-desktop.apk
