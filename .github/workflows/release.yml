@@ -1,24 +1,20 @@
 name: Build & Release
 
-# Trigger khi push tag kiểu v1.0.5
 on:
   push:
     tags:
       - 'v*.*.*'
 
 jobs:
-
-  # ─────────────────────────────────────────────────────────
-  # Bước 1: Build JAR một lần duy nhất (trên Linux)
-  # ─────────────────────────────────────────────────────────
+  # Build JAR with Ubuntu
   build-jar:
     name: Build fat JAR
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
@@ -27,30 +23,27 @@ jobs:
         run: mvn package -DskipAssembly=true --no-transfer-progress
 
       - name: Upload fat JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: fat-jar
           path: target/*-jar-with-dependencies.jar
           retention-days: 1
-
-  # ─────────────────────────────────────────────────────────
-  # Bước 2: jlink trên từng runner native
-  # ─────────────────────────────────────────────────────────
+  # jlink for each runner native
   build-jre-windows:
     name: jlink – Windows x64
     runs-on: windows-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: fat-jar
           path: target/
@@ -73,7 +66,7 @@ jobs:
         run: tools\jre-win\bin\java.exe -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: jre-win
           path: tools/jre-win/
@@ -84,16 +77,16 @@ jobs:
     runs-on: macos-13
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: fat-jar
           path: target/
@@ -115,7 +108,7 @@ jobs:
         run: tools/jre-mac-x64/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: jre-mac-x64
           path: tools/jre-mac-x64/
@@ -126,16 +119,16 @@ jobs:
     runs-on: macos-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: fat-jar
           path: target/
@@ -157,7 +150,7 @@ jobs:
         run: tools/jre-mac-arm/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: jre-mac-arm
           path: tools/jre-mac-arm/
@@ -168,16 +161,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: fat-jar
           path: target/
@@ -199,7 +192,7 @@ jobs:
         run: tools/jre-linux-x64/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: jre-linux-x64
           path: tools/jre-linux-x64/
@@ -210,16 +203,16 @@ jobs:
     runs-on: ubuntu-24.04-arm
     needs: build-jar
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Download fat JAR
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: fat-jar
           path: target/
@@ -241,15 +234,13 @@ jobs:
         run: tools/jre-linux-arm/bin/java -version
 
       - name: Upload JRE artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: jre-linux-arm
           path: tools/jre-linux-arm/
           retention-days: 1
 
-  # ─────────────────────────────────────────────────────────
-  # Bước 3: Thu thập tất cả JRE, chạy mvn package, tạo Release
-  # ─────────────────────────────────────────────────────────
+  # Build
   package-and-release:
     name: Package & Create GitHub Release
     runs-on: ubuntu-latest
@@ -260,49 +251,48 @@ jobs:
       - build-jre-linux-x64
       - build-jre-linux-arm
     permissions:
-      contents: write   # cần để tạo Release và upload assets
+      contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
 
-      # Tải về tất cả JRE artifacts đã build
       - name: Download JRE – Windows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: jre-win
           path: tools/jre-win/
 
       - name: Download JRE – macOS x64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: jre-mac-x64
           path: tools/jre-mac-x64/
 
       - name: Download JRE – macOS ARM
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: jre-mac-arm
           path: tools/jre-mac-arm/
 
       - name: Download JRE – Linux x64
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: jre-linux-x64
           path: tools/jre-linux-x64/
 
       - name: Download JRE – Linux ARM
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.2.1
         with:
           name: jre-linux-arm
           path: tools/jre-linux-arm/
 
-      # Đảm bảo binary trong JRE có quyền execute (quan trọng cho Mac/Linux packages)
+      # Execute permit
       - name: Fix JRE permissions (Mac/Linux)
         run: |
           chmod -R +x tools/jre-mac-x64/bin/ tools/jre-mac-x64/lib/ || true
@@ -310,12 +300,12 @@ jobs:
           chmod -R +x tools/jre-linux-x64/bin/ tools/jre-linux-x64/lib/ || true
           chmod -R +x tools/jre-linux-arm/bin/ tools/jre-linux-arm/lib/ || true
 
-      # Lấy version từ tag (vd: refs/tags/v1.0.5 → 1.0.5)
+      # Get ver from tag
       - name: Extract version from tag
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-      # Bump version string trong pom.xml để finalName khớp với tag
+      # Bump version
       - name: Sync pom.xml finalName to tag version
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
@@ -327,12 +317,12 @@ jobs:
       - name: List generated packages
         run: ls -lh target/VideoDownloader-*.zip target/VideoDownloader-*.tar.gz || true
 
-      # Tạo GitHub Release và upload tất cả artifacts
+      # Create Github release and upload artifacts
       - name: Create GitHub Release & upload assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.3.2
         with:
           name: "Video Downloader ${{ github.ref_name }}"
-          draft: true          # tạo dưới dạng draft để bạn review trước khi publish
+          draft: true
           generate_release_notes: true
           files: |
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Win.zip

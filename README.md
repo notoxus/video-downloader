@@ -73,7 +73,7 @@ When the format dialog appears, tick **"Cut a section before downloading"**. The
 
 Notes:
 - The filmstrip preview is best-effort. For DRM-protected or some login-gated streams it may not appear — the slider still works.
-- The queue shows a ✂ mark next to the format for trimmed downloads.
+- The queue shows a "trim" mark next to the format for trimmed downloads and you can also remove it with "remove" mark.
 
 ### Method 4 — Bulk API JSON Import
 
