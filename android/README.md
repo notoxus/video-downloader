@@ -20,9 +20,15 @@ Standalone Android port of VideoDownloader. The app opens straight to Google —
 - ✅ Live stream sniffing while browsing other sites (same URL patterns as the desktop extension)
 - ✅ Format picker (MP4/MP3) per detected stream, with a sequential download queue (one at a time, like desktop)
 - ✅ Per-item status (Detected → Queued → Downloading with progress → Done/Error) and remove/dismiss
-- ✅ Accepts links from the Share sheet
+- ✅ Accepts links from the Share sheet, and runs as a **single instance** (`singleTask`) — sharing a link
+  repeatedly reuses the same window instead of stacking duplicate tasks
+- ✅ **Clipboard watch**: a copied YouTube/TikTok/… link is auto-queued when you return to the app
+  (Android only allows clipboard reads in the foreground, so it checks on resume rather than polling)
+- ✅ Saves into the public **Movies/VideoDownloader** (or **Music/VideoDownloader** for MP3) via MediaStore
+  on Android 10+, so finished files show up in the Gallery and file managers
+- ✅ Mobile user-agent so embedded pages render their tappable mobile layout
 - 🔲 Trim support (desktop parity)
-- 🔲 Save to public `Movies/` via MediaStore (currently app-private storage)
+- 🔲 Instagram/Facebook that require login (needs cookie import — yt-dlp returns an empty response otherwise)
 - 🔲 Foreground service so downloads survive app switching
 
 ## Build

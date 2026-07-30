@@ -63,7 +63,7 @@ public class AppGUI extends JFrame {
 	public AppGUI(DownloadManager manager) {
 		this.manager = manager;
 
-		setTitle("Video Downloader - v1.0.4");
+		setTitle("Video Downloader - v1.0.5");
 		try {
 			URL iconUrl = getClass().getResource("/logo.png");
 			if (iconUrl != null) {

@@ -60,13 +60,14 @@ class DownloadQueue(private val context: Context, scope: CoroutineScope) {
     private suspend fun runDownload(item: QueueItem) {
         item.status = DownloadStatus.DOWNLOADING
         try {
-            val dir = Downloader.download(context, item.url, item.referer, item.format!!) { percent, _ ->
+            val savedTo = Downloader.download(context, item.url, item.referer, item.format!!) { percent, _ ->
                 item.progress = percent
             }
-            item.savedPath = dir.absolutePath
+            item.savedPath = savedTo
             item.status = DownloadStatus.DONE
         } catch (e: Exception) {
-            item.errorMessage = e.message ?: "Unknown error"
+            android.util.Log.e("DownloadQueue", "Download failed for ${item.url}", e)
+            item.errorMessage = e.message?.takeIf { it.isNotBlank() } ?: (e.cause?.message ?: e.toString())
             item.status = DownloadStatus.ERROR
         }
     }

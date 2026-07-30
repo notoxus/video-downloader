@@ -21,7 +21,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class UpdateChecker {
-	private static final String CURRENT_VERSION = "v1.0.4";
+	private static final String CURRENT_VERSION = "v1.0.5";
 
 	private static final String REPO_OWNER = "notoxus";
 	private static final String REPO_NAME = "video-downloader";

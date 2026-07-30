@@ -10,16 +10,16 @@ Before running the application, ensure your system meets the following minor req
 ## Step 2: Installing the App
 1. Navigate to the **[Releases](../../releases)** page of this repository.
 2. Download the compressed archive that matches your Operating System:
-   * **Windows:** Install `VideoDownloader-v1.0.3-Win.zip`
+   * **Windows:** Install `VideoDownloader-v1.0.5-Win.zip`
    * **MacOS:**
-    	* Install `VideoDownloader-v1.0.3-Mac-Intel.tar.gz` (Supporting to Mac's x64 architecture)
-    	* Install `VideoDownloader-v1.0.3-Mac-AppleSilicon.tar.gz` (Supporting to Mac's ARM architecture)
+    	* Install `VideoDownloader-v1.0.5-Mac-Intel.tar.gz` (Supporting to Mac's x64 architecture)
+    	* Install `VideoDownloader-v1.0.5-Mac-AppleSilicon.tar.gz` (Supporting to Mac's ARM architecture)
    * **Linux:**
-   		* Install `VideoDownloader-v1.0.3-Linux-x64.tar.gz` (Supporting to x64 architecture too)
-     	* Install `VideoDownloader-v1.0.3-Linux-ARM.tar.gz` (Supporting to ARM architecture too)
+   		* Install `VideoDownloader-v1.0.5-Linux-x64.tar.gz` (Supporting to x64 architecture too)
+     	* Install `VideoDownloader-v1.0.5-Linux-ARM.tar.gz` (Supporting to ARM architecture too)
    * **Android:**
-      * Install `VideoDownloader-v1.0.3.apk` (standalone app — hunts and downloads directly on the phone)
-      * Or, if you just want to send links from your phone to the desktop app, install `VideoDownloader-v1.0.3-remote-desktop.apk` (companion app)
+      * Install `VideoDownloader-v1.0.5.apk` (standalone app — hunts and downloads directly on the phone)
+      * Or, if you just want to send links from your phone to the desktop app, install `VideoDownloader-v1.0.5-remote-desktop.apk` (companion app)
 
 ## 📂 Package Structure (What's Inside)
 Once extracted, your installation folder will contain a clean, pre-configured ecosystem:
@@ -33,7 +33,7 @@ Once extracted, your installation folder will contain a clean, pre-configured ec
 ## Step 3: Run the Application
 
 ### For Windows Users
-1. Extract the downloaded `VideoDownloader-v1.0.3-Win.zip` archive to any folder of your choice.
+1. Extract the downloaded `VideoDownloader-v1.0.5-Win.zip` archive to any folder of your choice.
 2. Simply **double-click** the **`run.bat`** file to launch the app!
    *(Note: A background launcher ensures the app opens seamlessly without leaving an annoying black command prompt window open).*
 

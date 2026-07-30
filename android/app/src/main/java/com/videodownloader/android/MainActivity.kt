@@ -1,6 +1,8 @@
 package com.videodownloader.android
 
 import android.annotation.SuppressLint
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.webkit.WebView
@@ -25,18 +27,29 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import java.net.URLEncoder
 
 class MainActivity : ComponentActivity() {
+
+    // Incoming shared URL, exposed to Compose. singleTask (see manifest) keeps the whole app in
+    // one instance: a share from another app is delivered to onNewIntent on the existing activity
+    // instead of spawning a duplicate task. `seq` bumps so the same URL shared twice still fires.
+    private var incomingUrl by mutableStateOf<String?>(null)
+    private var incomingSeq by mutableIntStateOf(0)
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,14 +60,28 @@ class MainActivity : ComponentActivity() {
         // own padding is enough and nothing renders under the system bars.
         WindowCompat.setDecorFitsSystemWindows(window, true)
 
-        val sharedUrl = intent?.takeIf { it.action == Intent.ACTION_SEND }
-            ?.getStringExtra(Intent.EXTRA_TEXT)
-            ?.let { Regex("https?://\\S+").find(it)?.value }
+        consumeShareIntent(intent)
 
         setContent {
             MaterialTheme {
-                HunterScreen(initialUrl = sharedUrl ?: "")
+                HunterScreen(incomingUrl = incomingUrl, incomingSeq = incomingSeq)
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        consumeShareIntent(intent)
+    }
+
+    private fun consumeShareIntent(intent: Intent?) {
+        val url = intent?.takeIf { it.action == Intent.ACTION_SEND }
+            ?.getStringExtra(Intent.EXTRA_TEXT)
+            ?.let { Regex("https?://\\S+").find(it)?.value }
+        if (url != null) {
+            incomingUrl = url
+            incomingSeq++
         }
     }
 }
@@ -76,51 +103,79 @@ private fun isDirectDownloadPlatform(url: String): Boolean {
         .any { lower.contains(it) }
 }
 
+private const val HOME_URL = "https://www.google.com"
+
+// A modern mobile Chrome UA so sites (Google, YouTube, etc.) serve their tappable mobile layout
+// instead of the cramped desktop one the default WebView UA can trigger.
+private const val MOBILE_UA =
+    "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 " +
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+
 @SuppressLint("SetJavaScriptEnabled")
 @androidx.compose.runtime.Composable
-fun HunterScreen(initialUrl: String) {
+fun HunterScreen(incomingUrl: String?, incomingSeq: Int) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val queue = remember { DownloadQueue(context, scope) }
 
-    // A shared/typed link to a platform yt-dlp already understands skips hunting entirely.
-    val initialIsDirect = remember(initialUrl) { initialUrl.isNotBlank() && isDirectDownloadPlatform(initialUrl) }
-    val huntStartUrl = remember(initialUrl) {
-        if (initialIsDirect) "https://www.google.com" else initialUrl.ifBlank { "https://www.google.com" }
-    }
-
-    var addressText by remember { mutableStateOf(huntStartUrl) }
-    var currentPage by remember { mutableStateOf("") }
+    var addressText by remember { mutableStateOf(HOME_URL) }
+    var currentPage by remember { mutableStateOf(HOME_URL) }
     var status by remember {
         mutableStateOf("Browsing — play any video on this page to catch its stream.")
     }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
-    // While true, WebView page-load callbacks must not touch `status` — covers the silent
-    // background Google load that accompanies a direct-download detection, including any
-    // redirects Google itself issues (which fire onPageFinished more than once). Cleared the
-    // moment the user actually drives navigation themselves.
-    var silentLoad by remember { mutableStateOf(initialIsDirect) }
+    var lastClipboard by remember { mutableStateOf("") }
 
-    androidx.compose.runtime.LaunchedEffect(initialUrl) {
-        if (initialIsDirect) {
-            queue.addDetected(initialUrl, null)
-            status = "Detected a YouTube/TikTok/Facebook/Instagram link — pick a format below."
+    // When true, the WebView's page-load callback must not overwrite a "Detected/Added" message.
+    // Set whenever a direct-download link is queued (those never navigate the WebView); cleared
+    // the moment the user actually navigates somewhere to hunt. Initialised from the launch intent
+    // so the first silent Google load doesn't clobber a shared link's status.
+    val initialDirect = remember {
+        incomingSeq > 0 && incomingUrl != null && isDirectDownloadPlatform(incomingUrl)
+    }
+    var suppressBrowsingStatus by remember { mutableStateOf(initialDirect) }
+
+    fun queueDirect(url: String, message: String) {
+        suppressBrowsingStatus = true
+        queue.addDetected(url, null)
+        status = message
+    }
+
+    fun routeUrl(raw: String, fromUser: Boolean) {
+        val trimmed = raw.trim()
+        if (trimmed.startsWith("http") && isDirectDownloadPlatform(trimmed)) {
+            queueDirect(trimmed, "Detected a YouTube/TikTok/Facebook/Instagram link — pick a format below.")
+            return
+        }
+        if (fromUser) {
+            suppressBrowsingStatus = false
+            val url = resolveNavigationTarget(trimmed)
+            currentPage = url
+            status = "Loading… play the video to trigger detection."
+            webViewRef?.loadUrl(url)
         }
     }
 
-    fun navigate(target: String) {
-        val trimmed = target.trim()
-        if (trimmed.startsWith("http") && isDirectDownloadPlatform(trimmed)) {
-            silentLoad = true
-            queue.addDetected(trimmed, null)
-            status = "Detected a YouTube/TikTok/Facebook/Instagram link — pick a format below."
-            return
+    // Share intents (initial launch + onNewIntent while running) — all handled in this one session.
+    LaunchedEffect(incomingSeq) {
+        val url = incomingUrl
+        if (incomingSeq > 0 && url != null) {
+            routeUrl(url, fromUser = false)
         }
-        silentLoad = false
-        val url = resolveNavigationTarget(trimmed)
-        currentPage = url
-        status = "Loading… play the video to trigger detection."
-        webViewRef?.loadUrl(url)
+    }
+
+    // Clipboard watch: Android only lets apps read the clipboard while in the foreground, so we
+    // check on resume rather than poll in the background like the desktop app does. A freshly
+    // copied YouTube/TikTok/… link is auto-added to the queue when you return to the app.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val text = cm?.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)
+            ?.coerceToText(context)?.toString().orEmpty()
+        val url = Regex("https?://\\S+").find(text)?.value
+        if (url != null && url != lastClipboard && isDirectDownloadPlatform(url)) {
+            lastClipboard = url
+            queueDirect(url, "Added a link from your clipboard — pick a format below.")
+        }
     }
 
     Scaffold { padding ->
@@ -133,7 +188,8 @@ fun HunterScreen(initialUrl: String) {
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedTextField(
                     value = addressText,
@@ -142,7 +198,7 @@ fun HunterScreen(initialUrl: String) {
                     singleLine = true,
                     label = { Text("Search or paste a URL") }
                 )
-                Button(onClick = { navigate(addressText) }) { Text("Go") }
+                Button(onClick = { routeUrl(addressText, fromUser = true) }) { Text("Go") }
             }
 
             // Embedded browser with stream sniffing — starts on Google so you can search
@@ -161,25 +217,25 @@ fun HunterScreen(initialUrl: String) {
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.mediaPlaybackRequiresUserGesture = false
+                        settings.useWideViewPort = true
+                        settings.loadWithOverviewMode = true
+                        settings.userAgentString = MOBILE_UA
 
                         webViewClient = StreamSniffer(
                             onStreamFound = { streamUrl -> queue.addDetected(streamUrl, currentPage) },
                             onPageStarted = { pageUrl ->
-                                // Only touch currentPage/addressText here — a silent background
-                                // load (e.g. Google behind a direct-download detection) must not
-                                // clobber a status message set elsewhere.
                                 currentPage = pageUrl
                                 addressText = pageUrl
                             },
                             onPageFinished = {
-                                if (!silentLoad) {
+                                if (!suppressBrowsingStatus) {
                                     status = "Browsing — play any video on this page to catch its stream."
                                 }
                             }
                         )
 
-                        currentPage = huntStartUrl
-                        loadUrl(huntStartUrl)
+                        currentPage = HOME_URL
+                        loadUrl(HOME_URL)
                         webViewRef = this
                     }
                 }
@@ -236,14 +292,13 @@ private fun QueueRow(item: QueueItem, onPickFormat: (DownloadFormat) -> Unit, on
                     Text("${item.format} — ${item.progress.toInt()}%", style = MaterialTheme.typography.bodySmall)
                 }
                 DownloadStatus.DONE -> {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("✅ Saved (${item.format})", style = MaterialTheme.typography.bodySmall)
-                        OutlinedButton(onClick = onRemove) { Text("Clear") }
-                    }
+                    Text("✅ Saved to ${item.savedPath ?: item.format.toString()}",
+                        maxLines = 2, style = MaterialTheme.typography.bodySmall)
+                    OutlinedButton(onClick = onRemove) { Text("Clear") }
                 }
                 DownloadStatus.ERROR -> {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("❌ ${item.errorMessage}", maxLines = 1, style = MaterialTheme.typography.bodySmall)
+                        Text("❌ ${item.errorMessage}", maxLines = 2, style = MaterialTheme.typography.bodySmall)
                         OutlinedButton(onClick = onRemove) { Text("Clear") }
                     }
                 }
