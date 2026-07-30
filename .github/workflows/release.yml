@@ -53,8 +53,7 @@ jobs:
       - name: Run jlink
         shell: powershell
         run: |
-          $jar = (Get-ChildItem target\*-jar-with-dependencies.jar)[0].FullName
-          $modules = (jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$jar") -join ","
+          $modules = "java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           Write-Host "Modules: $modules"
           jlink `
             --add-modules "$modules" `
@@ -96,8 +95,7 @@ jobs:
 
       - name: "Run jlink (output: Intel x64 JRE)"
         run: |
-          JAR=$(ls target/*-jar-with-dependencies.jar | head -1)
-          MODULES=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$JAR")
+          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
@@ -140,8 +138,7 @@ jobs:
 
       - name: Run jlink
         run: |
-          JAR=$(ls target/*-jar-with-dependencies.jar | head -1)
-          MODULES=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$JAR")
+          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
@@ -182,8 +179,7 @@ jobs:
 
       - name: Run jlink
         run: |
-          JAR=$(ls target/*-jar-with-dependencies.jar | head -1)
-          MODULES=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$JAR")
+          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
@@ -224,8 +220,7 @@ jobs:
 
       - name: Run jlink
         run: |
-          JAR=$(ls target/*-jar-with-dependencies.jar | head -1)
-          MODULES=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$JAR")
+          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
