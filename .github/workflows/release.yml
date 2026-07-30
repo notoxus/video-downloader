@@ -254,6 +254,7 @@ jobs:
   build-android:
     name: Build Android APKs
     runs-on: ubuntu-latest
+    if: ${{ secrets.KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -265,7 +266,12 @@ jobs:
 
       - name: Decode keystore from secret
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore/release.jks
+          # Strip headers, footers, and whitespace (handles both certutil and PowerShell base64 formats)
+          echo "${{ secrets.KEYSTORE_BASE64 }}" \
+            | grep -v '\-\-\-' \
+            | tr -d '\r\n ' \
+            | base64 --decode > keystore/release.jks
+          echo "Keystore size: $(wc -c < keystore/release.jks) bytes"
 
       - name: Write keystore.properties (main app)
         run: |
@@ -319,6 +325,7 @@ jobs:
       - build-jre-linux-x64
       - build-jre-linux-arm
       - build-android
+    if: always() && !failure() && !cancelled()
     permissions:
       contents: write
 
@@ -362,6 +369,7 @@ jobs:
           path: tools/jre-linux-arm/
 
       - name: Download Android APKs
+        if: needs.build-android.result == 'success'
         uses: actions/download-artifact@v5
         with:
           name: android-apks
@@ -389,7 +397,8 @@ jobs:
       - name: List generated packages
         run: ls -lh target/VideoDownloader-*.zip target/VideoDownloader-*.tar.gz apks/ || true
 
-      - name: Create GitHub Release & upload all assets
+      - name: Create GitHub Release & upload desktop assets
+        id: release
         uses: softprops/action-gh-release@v2.3.2
         with:
           name: "Video Downloader ${{ github.ref_name }}"
@@ -401,5 +410,12 @@ jobs:
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Mac-AppleSilicon.tar.gz
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Linux-x64.tar.gz
             target/VideoDownloader-v${{ steps.version.outputs.VERSION }}-Linux-ARM.tar.gz
+
+      - name: Upload Android APKs to Release
+        if: needs.build-android.result == 'success'
+        uses: softprops/action-gh-release@v2.3.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
             apks/VideoDownloader-${{ github.ref_name }}.apk
             apks/VideoDownloader-${{ github.ref_name }}-remote-desktop.apk

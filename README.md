@@ -130,7 +130,7 @@ Captured URLs are sent via HTTP POST to the app on `localhost:8765`, then queued
 
 - **OS:** Windows 10+, macOS 12+, or Linux (x64/ARM)
 - **Browser:** Google Chrome or Chromium (for Hunting mode)
-- **Internet:** Required for downloading dependencies on first run (yt-dlp, ffmpeg)
+- **Internet:** Required on first launch only if the bundled JRE is missing (auto-downloaded from Adoptium)
 
 ---
 
@@ -143,6 +143,8 @@ mvn clean package
 ```
 
 Outputs are in `target/` — platform-specific archives for Windows, macOS (x64/ARM), and Linux (x64/ARM).
+
+> **Note:** The release archives bundle a trimmed JRE built automatically by CI (`jlink`). When building locally, the `tools/jre-*/` directories must be present for the assembly to include them. The launchers (`run.bat` / `run.sh`) will fall back to auto-downloading a JRE from Adoptium if the folder is missing.
 
 ---
 
