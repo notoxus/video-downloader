@@ -308,7 +308,7 @@ jobs:
       - name: Make gradlew executable
         if: steps.guard.outputs.built == 'true'
         run: |
-          chmod +x android/gradlew companion-android/gradlew
+          chmod +x android/gradlew
 
       - name: Build main APK (signed release)
         if: steps.guard.outputs.built == 'true'
@@ -318,7 +318,7 @@ jobs:
       - name: Build companion APK (signed release)
         if: steps.guard.outputs.built == 'true'
         working-directory: companion-android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ../android/gradlew assembleRelease --no-daemon
 
       - name: Rename APKs to release filenames
         if: steps.guard.outputs.built == 'true'
