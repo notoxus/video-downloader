@@ -53,7 +53,7 @@ jobs:
       - name: Run jlink
         shell: powershell
         run: |
-          $modules = "java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
+          $modules = "java.se,jdk.httpserver,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           Write-Host "Modules: $modules"
           jlink `
             --add-modules "$modules" `
@@ -95,7 +95,7 @@ jobs:
 
       - name: "Run jlink (output: Intel x64 JRE)"
         run: |
-          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
+          MODULES="java.se,jdk.httpserver,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
@@ -138,7 +138,7 @@ jobs:
 
       - name: Run jlink
         run: |
-          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
+          MODULES="java.se,jdk.httpserver,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
@@ -179,7 +179,7 @@ jobs:
 
       - name: Run jlink
         run: |
-          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
+          MODULES="java.se,jdk.httpserver,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
@@ -220,7 +220,7 @@ jobs:
 
       - name: Run jlink
         run: |
-          MODULES="java.se,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
+          MODULES="java.se,jdk.httpserver,jdk.crypto.ec,jdk.crypto.cryptoki,jdk.unsupported,jdk.zipfs,jdk.localedata,jdk.accessibility"
           echo "Modules: $MODULES"
           jlink \
             --add-modules "$MODULES" \
