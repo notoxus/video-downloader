@@ -5,13 +5,13 @@ set "JRE_DIR=%~dp0jre"
 set "JAVA_EXE=%JRE_DIR%\bin\javaw.exe"
 set "JAR=%~dp0VideoDownloader.jar"
 
-:: ── Kiểm tra JRE đã có chưa ────────────────────────────────────────────────
+:: JREs checker
 if exist "%JAVA_EXE%" goto :launch
 
-:: ── JRE chưa có → tải tự động từ Adoptium ──────────────────────────────────
+:: Auto download if that hasnt existed yet
 echo [Bootstrapper] JRE not found. Downloading Java 21 runtime...
 
-:: Kiểm tra PowerShell
+:: Check with PowerShell
 where powershell >nul 2>&1
 if errorlevel 1 (
     echo [Bootstrapper] ERROR: PowerShell not found. Cannot auto-download JRE.

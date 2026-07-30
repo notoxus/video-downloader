@@ -74,16 +74,17 @@ jobs:
 
   build-jre-mac-x64:
     name: jlink – macOS x64 (Intel)
-    runs-on: macos-13
+    runs-on: macos-latest
     needs: build-jar
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: Set up Java 21
+      - name: Set up Java 21 x64 (Intel JDK via Rosetta 2)
         uses: actions/setup-java@v4.7.0
         with:
           distribution: temurin
           java-version: '21'
+          architecture: x64
 
       - name: Download fat JAR
         uses: actions/download-artifact@v4.2.1
@@ -91,7 +92,7 @@ jobs:
           name: fat-jar
           path: target/
 
-      - name: Run jlink
+      - name: Run jlink (output: Intel x64 JRE)
         run: |
           JAR=$(ls target/*-jar-with-dependencies.jar | head -1)
           MODULES=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$JAR")
@@ -104,8 +105,10 @@ jobs:
             --compress=2 \
             --output tools/jre-mac-x64
 
-      - name: Verify JRE
-        run: tools/jre-mac-x64/bin/java -version
+      - name: Verify JRE architecture
+        run: |
+          file tools/jre-mac-x64/bin/java
+          tools/jre-mac-x64/bin/java -version
 
       - name: Upload JRE artifact
         uses: actions/upload-artifact@v4.6.2

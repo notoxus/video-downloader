@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ── Detect platform ──────────────────────────────────────────────────────────
+# Detect platform
 OS=$(uname -s)
 ARCH=$(uname -m)
 
@@ -33,7 +33,7 @@ JRE_DIR="$SCRIPT_DIR/jre-$PLATFORM"
 JAVA_BIN="$JRE_DIR/bin/java"
 JAR="$SCRIPT_DIR/VideoDownloader.jar"
 
-# ── Hàm tải JRE từ Adoptium ─────────────────────────────────────────────────
+# Download JRES
 download_jre() {
     local api_url="https://api.adoptium.net/v3/assets/latest/21/hotspot?os=${ADOPTIUM_OS}&architecture=${ADOPTIUM_ARCH}&image_type=jre"
 
@@ -51,7 +51,7 @@ download_jre() {
         exit 1
     fi
 
-    # Tải metadata JSON
+    # Download metadata JSON
     if [ "$DOWNLOADER" = "curl" ]; then
         JSON=$(curl -fsSL "$api_url")
         DOWNLOAD_URL=$(echo "$JSON" | grep -o '"link":"[^"]*"' | head -1 | cut -d'"' -f4)
@@ -84,7 +84,6 @@ download_jre() {
     mkdir -p "$EXTRACT_DIR"
     tar -xzf "$TMP_FILE" -C "$EXTRACT_DIR"
 
-    # Adoptium archives có một thư mục con bên trong (vd: jdk-21.0.x+7-jre)
     local EXTRACTED_JRE
     EXTRACTED_JRE=$(find "$EXTRACT_DIR" -maxdepth 1 -mindepth 1 -type d | head -1)
 
@@ -94,7 +93,7 @@ download_jre() {
         exit 1
     fi
 
-    # Di chuyển đến đúng vị trí
+    # Moving to the right dir destination
     mkdir -p "$(dirname "$JRE_DIR")"
     mv "$EXTRACTED_JRE" "$JRE_DIR"
     rm -rf "$TMP_DIR"
@@ -102,18 +101,17 @@ download_jre() {
     echo "[Bootstrapper] JRE installed to: $JRE_DIR"
 }
 
-# ── Kiểm tra JRE, tải nếu thiếu ─────────────────────────────────────────────
+# Check and download if that hasnt existed yet
 if [ ! -x "$JAVA_BIN" ]; then
     download_jre
 fi
 
-# Kiểm tra lại sau khi tải
 if [ ! -x "$JAVA_BIN" ]; then
     echo "[Bootstrapper] ERROR: JRE installation succeeded but java binary not found at:"
     echo "  $JAVA_BIN"
     exit 1
 fi
 
-# ── Launch ───────────────────────────────────────────────────────────────────
+# Launch
 echo "[System] Detected platform: $PLATFORM — launching..."
 "$JAVA_BIN" -jar "$JAR" &
