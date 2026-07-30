@@ -92,7 +92,7 @@ jobs:
           name: fat-jar
           path: target/
 
-      - name: Run jlink (output: Intel x64 JRE)
+      - name: "Run jlink (output: Intel x64 JRE)"
         run: |
           JAR=$(ls target/*-jar-with-dependencies.jar | head -1)
           MODULES=$(jdeps --ignore-missing-deps --print-module-deps --multi-release 21 "$JAR")
