@@ -305,6 +305,11 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
+      - name: Make gradlew executable
+        if: steps.guard.outputs.built == 'true'
+        run: |
+          chmod +x android/gradlew companion-android/gradlew
+
       - name: Build main APK (signed release)
         if: steps.guard.outputs.built == 'true'
         working-directory: android
