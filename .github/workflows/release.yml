@@ -386,6 +386,28 @@ jobs:
           name: jre-linux-arm
           path: tools/jre-linux-arm/
 
+      - name: Download engine tools (yt-dlp & ffmpeg) for release packages
+        run: |
+          # 1. Download yt-dlp binaries
+          curl -sSL -f https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o tools/yt-dlp.exe
+          curl -sSL -f https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos -o tools/yt-dlp-macos
+          curl -sSL -f https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o tools/yt-dlp
+
+          # 2. Download ffmpeg binaries
+          curl -sSL -f https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-win-64.zip -o ffmpeg-win.zip
+          unzip -q ffmpeg-win.zip -d tools/ && rm ffmpeg-win.zip
+
+          curl -sSL -f https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-osx-64.zip -o ffmpeg-mac.zip
+          unzip -q ffmpeg-mac.zip -d tmp-mac && mv tmp-mac/ffmpeg tools/ffmpeg-macos && rm -rf tmp-mac ffmpeg-mac.zip
+
+          curl -sSL -f https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-linux-64.zip -o ffmpeg-linux64.zip
+          unzip -q ffmpeg-linux64.zip -d tmp-l64 && mv tmp-l64/ffmpeg tools/ffmpeg-linux-x64 && rm -rf tmp-l64 ffmpeg-linux64.zip
+
+          curl -sSL -f https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-linux-arm-64.zip -o ffmpeg-linuxarm.zip
+          unzip -q ffmpeg-linuxarm.zip -d tmp-larm && mv tmp-larm/ffmpeg tools/ffmpeg-linux-arm64 && rm -rf tmp-larm ffmpeg-linuxarm.zip
+
+          chmod +x tools/ffmpeg* tools/yt-dlp* tools/*.exe || true
+
       - name: Download Android APKs
         if: needs.build-android.result == 'success'
         uses: actions/download-artifact@v5

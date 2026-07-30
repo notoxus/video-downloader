@@ -51,10 +51,38 @@ public class DependencyManager {
 			}
 		}
 		if (!fFmpegFile.exists()) {
-			System.out.println("Warning: Not found ffmpeg!");
-			System.out.println("Audio and video may be separated");
+			System.out.println("ffmpeg installing...");
+			downloadFfmpeg(fFmpegFile, os, arch);
 		} else {
 			fFmpegFile.setExecutable(true);
+		}
+	}
+
+	private static void downloadFfmpeg(File targetFile, String os, String arch) {
+		String ffUrl = "";
+		if (os.contains("win")) {
+			ffUrl = "https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-win-64.zip";
+		} else if (os.contains("mac")) {
+			ffUrl = "https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-osx-64.zip";
+		} else if (arch.contains("aarch64") || arch.contains("arm")) {
+			ffUrl = "https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-linux-arm-64.zip";
+		} else {
+			ffUrl = "https://github.com/ffbinaries/ffbinaries-prebuilt/releases/download/v4.4.1/ffmpeg-4.4.1-linux-64.zip";
+		}
+
+		try (InputStream in = new URI(ffUrl).toURL().openStream();
+				java.util.zip.ZipInputStream zip = new java.util.zip.ZipInputStream(in)) {
+			java.util.zip.ZipEntry entry;
+			while ((entry = zip.getNextEntry()) != null) {
+				if (!entry.isDirectory() && entry.getName().toLowerCase().contains("ffmpeg")) {
+					Files.copy(zip, targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+					targetFile.setExecutable(true);
+					System.out.println("ffmpeg installation complete!");
+					break;
+				}
+			}
+		} catch (Exception e) {
+			System.err.println("Can not install ffmpeg: " + e.getMessage());
 		}
 	}
 
