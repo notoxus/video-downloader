@@ -280,16 +280,6 @@ jobs:
             | base64 --decode > keystore/release.jks
           echo "Keystore size: $(wc -c < keystore/release.jks) bytes"
 
-      - name: Write keystore.properties (main app)
-        if: steps.guard.outputs.built == 'true'
-        run: |
-          cat > android/keystore.properties <<EOF
-          storeFile=../keystore/release.jks
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
-          EOF
-
       - name: Write keystore.properties (companion app)
         if: steps.guard.outputs.built == 'true'
         run: |
@@ -303,24 +293,17 @@ jobs:
       - name: Make gradlew executable
         if: steps.guard.outputs.built == 'true'
         run: |
-          chmod +x android/gradlew
-
-      - name: Build main APK (signed release)
-        if: steps.guard.outputs.built == 'true'
-        working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+          chmod +x companion-android/gradlew
 
       - name: Build companion APK (signed release)
         if: steps.guard.outputs.built == 'true'
         working-directory: companion-android
-        run: ../android/gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Rename APKs to release filenames
         if: steps.guard.outputs.built == 'true'
         run: |
           VERSION=${GITHUB_REF_NAME}
-          cp android/app/build/outputs/apk/release/app-release.apk \
-             "VideoDownloader-${VERSION}.apk"
           cp companion-android/app/build/outputs/apk/release/app-release.apk \
              "VideoDownloader-${VERSION}-remote-desktop.apk"
 
@@ -332,7 +315,7 @@ jobs:
           path: "VideoDownloader-*.apk"
           retention-days: 1
 
-  # Create github release
+  # Create GitHub release
   package-and-release:
     name: Package & Create GitHub Release
     runs-on: ubuntu-latest
@@ -407,7 +390,19 @@ jobs:
           unzip -q ffmpeg-linuxarm.zip -d tmp-larm && mv tmp-larm/ffmpeg tools/ffmpeg-linux-arm64 && rm -rf tmp-larm ffmpeg-linuxarm.zip
 
           chmod +x tools/ffmpeg* tools/yt-dlp* tools/*.exe || true
-
+          # 3. Download Deno binaries
+          curl -sSL -f https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip -o deno-win.zip
+          unzip -q deno-win.zip -d tools/ && rm deno-win.zip
+          
+          curl -sSL -f https://github.com/denoland/deno/releases/latest/download/deno-x86_64-apple-darwin.zip -o deno-mac.zip
+          unzip -q deno-mac.zip -d tmp-deno-mac && mv tmp-deno-mac/deno tools/deno-macos && rm -rf tmp-deno-mac deno-mac.zip
+          
+          curl -sSL -f https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip -o deno-linux64.zip
+          unzip -q deno-linux64.zip -d tmp-deno-l64 && mv tmp-deno-l64/deno tools/deno-linux-x64 && rm -rf tmp-deno-l64 deno-linux64.zip
+          
+          curl -sSL -f https://github.com/denoland/deno/releases/latest/download/deno-aarch64-unknown-linux-gnu.zip -o deno-linuxarm.zip
+          unzip -q deno-linuxarm.zip -d tmp-deno-larm && mv tmp-deno-larm/deno tools/deno-linux-arm64 && rm -rf tmp-deno-larm deno-linuxarm.zip
+          chmod +x tools/deno* || true
       - name: Download Android APKs
         if: needs.build-android.result == 'success'
         uses: actions/download-artifact@v5
@@ -457,5 +452,4 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           files: |
-            apks/VideoDownloader-${{ github.ref_name }}.apk
             apks/VideoDownloader-${{ github.ref_name }}-remote-desktop.apk

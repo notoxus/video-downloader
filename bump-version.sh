@@ -9,10 +9,6 @@
 #   - Installation.md          (all VideoDownloader-v*-<platform> filenames)
 #   - android/app/build.gradle.kts            (versionName + versionCode+1)
 #   - companion-android/app/build.gradle.kts  (versionName + versionCode+1)
-#
-# Does NOT touch pom.xml's <version>0.0.1-SNAPSHOT</version> (Maven's own
-# artifact version, unrelated to the public release tag) or historical
-# "vX.Y.Z+" mentions in READMEs.
 
 set -euo pipefail
 
@@ -33,7 +29,7 @@ echo "Bumping to v$NEW ..."
 
 # --- Desktop ---
 sed -i -E "s/(<finalName>VideoDownloader-v)[0-9]+\.[0-9]+\.[0-9]+(<\/finalName>)/\1$NEW\2/" pom.xml
-
+sed -i -E "s/(<version>)[^<]+(<\/version>)/\1$NEW\2/" pom.xml
 sed -i -E "s/(CURRENT_VERSION = \")v[0-9]+\.[0-9]+\.[0-9]+(\")/\1v$NEW\2/" \
     src/main/java/com/videodownloader/controller/UpdateChecker.java
 
@@ -41,6 +37,8 @@ sed -i -E "s/(setTitle\(\"Video Downloader - )v[0-9]+\.[0-9]+\.[0-9]+(\"\))/\1v$
     src/main/java/com/videodownloader/view/AppGUI.java
 
 sed -i -E "s/VideoDownloader-v[0-9]+\.[0-9]+\.[0-9]+/VideoDownloader-v$NEW/g" Installation.md
+
+sed -i -E "s/(<!-- VERSION_START -->)[^<]+(<!-- VERSION_END -->)/\1$NEW\2/g" README.md
 
 # --- Android (standalone + companion): versionName + versionCode+1 each ---
 bump_gradle() {
@@ -52,7 +50,6 @@ bump_gradle() {
     sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"$NEW\"/" "$file"
     echo "  $file: versionCode $old_code -> $new_code, versionName -> $NEW"
 }
-bump_gradle android/app/build.gradle.kts
 bump_gradle companion-android/app/build.gradle.kts
 
 echo ""

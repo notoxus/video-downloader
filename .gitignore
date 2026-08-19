@@ -19,3 +19,6 @@ tools/ffmpeg*
 tools/ffprobe*
 tools/yt-dlp*
 tools/yt-dlp
+# IDE ignore
+.idea/
+*.iml
