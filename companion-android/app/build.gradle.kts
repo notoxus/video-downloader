@@ -19,7 +19,7 @@ android {
         applicationId = "com.videodownloader.companion"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
+        versionCode = 6
         versionName = "1.0.6"
     }
 
