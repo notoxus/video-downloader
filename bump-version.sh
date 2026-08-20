@@ -1,57 +1,81 @@
 #!/usr/bin/env bash
 # Bumps the app's public release version everywhere it's hardcoded, in one shot.
-# Usage: ./bump-version.sh 1.0.5
+# Usage: ./bump-version.sh [new-version]   e.g. ./bump-version.sh 1.0.7
+# If no version is specified, it automatically increments the patch version from the latest git tag.
 #
 # Updates:
-#   - pom.xml                 (assembly finalName -> VideoDownloader-v1.0.5)
-#   - UpdateChecker.java       (CURRENT_VERSION -> "v1.0.5")
-#   - AppGUI.java              (window title -> "Video Downloader - v1.0.5")
-#   - Installation.md          (all VideoDownloader-v*-<platform> filenames)
-#   - android/app/build.gradle.kts            (versionName + versionCode+1)
-#   - companion-android/app/build.gradle.kts  (versionName + versionCode+1)
+#   - pom.xml                                (version -> 1.0.x, assembly finalName -> VideoDownloader-v1.0.x)
+#   - src/main/resources/version.properties  (version -> 1.0.x)
+#   - UpdateChecker.java                     (DEFAULT_FALLBACK_VERSION -> "v1.0.x")
+#   - Installation.md                        (all VideoDownloader-v*-<platform> filenames)
+#   - README.md                              (version badge / info)
+#   - companion-android/app/build.gradle.kts (versionName + versionCode+1)
 
 set -euo pipefail
 
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <new-version>   e.g. $0 1.0.5"
-    exit 1
-fi
-
-NEW="$1"
-if ! [[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    echo "Error: version must look like 1.0.5 (no leading 'v')"
-    exit 1
-fi
-
 cd "$(dirname "${BASH_SOURCE[0]}")"
+
+if [ $# -eq 0 ]; then
+    # Auto-detect latest git tag
+    LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.6")
+    LATEST_CLEAN="${LATEST_TAG#v}"
+    
+    if [[ "$LATEST_CLEAN" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        PATCH="${BASH_REMATCH[3]}"
+        NEW="$MAJOR.$MINOR.$((PATCH + 1))"
+        echo "No version specified. Auto-bumping from $LATEST_TAG -> v$NEW"
+    else
+        echo "Error: Could not parse latest tag '$LATEST_TAG'. Please specify version explicitly."
+        echo "Usage: $0 <new-version>   e.g. $0 1.0.7"
+        exit 1
+    fi
+else
+    NEW="${1#v}"
+fi
+
+if ! [[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: version must look like 1.0.7 or v1.0.7"
+    exit 1
+fi
 
 echo "Bumping to v$NEW ..."
 
 # --- Desktop ---
 sed -i -E "s/(<finalName>VideoDownloader-v)[0-9]+\.[0-9]+\.[0-9]+(<\/finalName>)/\1$NEW\2/" pom.xml
 sed -i -E "s/(<version>)[^<]+(<\/version>)/\1$NEW\2/" pom.xml
-sed -i -E "s/(CURRENT_VERSION = \")v[0-9]+\.[0-9]+\.[0-9]+(\")/\1v$NEW\2/" \
-    src/main/java/com/videodownloader/controller/UpdateChecker.java
 
-sed -i -E "s/(setTitle\(\"Video Downloader - )v[0-9]+\.[0-9]+\.[0-9]+(\"\))/\1v$NEW\2/" \
-    src/main/java/com/videodownloader/view/AppGUI.java
+if [ -f src/main/resources/version.properties ]; then
+    echo "version=$NEW" > src/main/resources/version.properties
+fi
+
+if grep -q "DEFAULT_FALLBACK_VERSION" src/main/java/com/videodownloader/controller/UpdateChecker.java 2>/dev/null; then
+    sed -i -E "s/(DEFAULT_FALLBACK_VERSION = \")v[0-9]+\.[0-9]+\.[0-9]+(\")/\1v$NEW\2/" \
+        src/main/java/com/videodownloader/controller/UpdateChecker.java
+fi
 
 sed -i -E "s/VideoDownloader-v[0-9]+\.[0-9]+\.[0-9]+/VideoDownloader-v$NEW/g" Installation.md
 
 sed -i -E "s/(<!-- VERSION_START -->)[^<]+(<!-- VERSION_END -->)/\1$NEW\2/g" README.md
 
-# --- Android (standalone + companion): versionName + versionCode+1 each ---
+# --- Android (companion): versionName + versionCode+1 ---
 bump_gradle() {
     local file="$1"
-    local old_code
-    old_code=$(grep -oE "versionCode = [0-9]+" "$file" | grep -oE "[0-9]+")
-    local new_code=$((old_code + 1))
-    sed -i -E "s/versionCode = [0-9]+/versionCode = $new_code/" "$file"
-    sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"$NEW\"/" "$file"
-    echo "  $file: versionCode $old_code -> $new_code, versionName -> $NEW"
+    if [ -f "$file" ]; then
+        local old_code
+        old_code=$(grep -oE "versionCode = [0-9]+" "$file" | grep -oE "[0-9]+" || echo "1")
+        local new_code=$((old_code + 1))
+        sed -i -E "s/versionCode = [0-9]+/versionCode = $new_code/" "$file"
+        sed -i -E "s/versionName = \"[^\"]+\"/versionName = \"$NEW\"/" "$file"
+        echo "  $file: versionCode $old_code -> $new_code, versionName -> $NEW"
+    fi
 }
 bump_gradle companion-android/app/build.gradle.kts
 
 echo ""
-echo "Done. Review before committing:"
+echo "Done! Review changes before committing:"
 echo "  git diff --stat"
+echo "To tag and release:"
+echo "  git commit -am 'release: v$NEW'"
+echo "  git tag v$NEW"

@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.util.Properties;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -21,13 +22,70 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class UpdateChecker {
-	private static final String CURRENT_VERSION = "v1.0.5";
+	private static final String DEFAULT_FALLBACK_VERSION = "v1.0.6";
+	private static String cachedVersion = null;
 
 	private static final String REPO_OWNER = "notoxus";
 	private static final String REPO_NAME = "video-downloader";
 
 	private static final String CONFIG_DIR = System.getProperty("user.home") + File.separator + ".VideoDownloaderApp";
 	private static final File SKIP_FILE = new File(CONFIG_DIR, "skipped_version.txt");
+
+	public static String getCurrentVersion() {
+		if (cachedVersion != null) {
+			return cachedVersion;
+		}
+
+		// 1. Try reading version from version.properties
+		try (InputStream in = UpdateChecker.class.getResourceAsStream("/version.properties")) {
+			if (in != null) {
+				Properties props = new Properties();
+				props.load(in);
+				String v = props.getProperty("version");
+				if (v != null && !v.isBlank() && !v.contains("${")) {
+					cachedVersion = formatVersion(v);
+					return cachedVersion;
+				}
+			}
+		} catch (Exception ignored) {
+		}
+
+		// 2. Try reading from Package Implementation-Version (from Manifest)
+		try {
+			String implVer = UpdateChecker.class.getPackage().getImplementationVersion();
+			if (implVer != null && !implVer.isBlank()) {
+				cachedVersion = formatVersion(implVer);
+				return cachedVersion;
+			}
+		} catch (Exception ignored) {
+		}
+
+		// 3. In dev mode with Git, detect git tag via 'git describe --tags --abbrev=0'
+		try {
+			Process p = new ProcessBuilder("git", "describe", "--tags", "--abbrev=0").start();
+			if (p.waitFor() == 0) {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
+					String tag = reader.readLine();
+					if (tag != null && !tag.isBlank()) {
+						cachedVersion = formatVersion(tag);
+						return cachedVersion;
+					}
+				}
+			}
+		} catch (Exception ignored) {
+		}
+
+		cachedVersion = DEFAULT_FALLBACK_VERSION;
+		return cachedVersion;
+	}
+
+	private static String formatVersion(String v) {
+		String clean = v.trim();
+		if (!clean.startsWith("v") && !clean.startsWith("V")) {
+			return "v" + clean;
+		}
+		return clean;
+	}
 
 	public static void checkForUpdates() {
 		new Thread(() -> {
@@ -50,8 +108,9 @@ public class UpdateChecker {
 					JsonObject release = JsonParser.parseString(response.toString()).getAsJsonObject();
 					String latestVersion = release.get("tag_name").getAsString();
 					String releaseUrl = release.get("html_url").getAsString();
+					String currentVersion = getCurrentVersion();
 
-					if (isNewer(latestVersion, CURRENT_VERSION) && !isVersionSkipped(latestVersion)) {
+					if (isNewer(latestVersion, currentVersion) && !isVersionSkipped(latestVersion)) {
 						String assetUrl = findPlatformAssetUrl(release);
 						showUpdateDialog(latestVersion, releaseUrl, assetUrl);
 					}
@@ -150,7 +209,7 @@ public class UpdateChecker {
 		SwingUtilities.invokeLater(() -> {
 			boolean canAutoDownload = assetUrl != null;
 			String message = "A new version (" + latestVersion + ") is available!\n" + "You are currently using "
-					+ CURRENT_VERSION + ".\n\n"
+					+ getCurrentVersion() + ".\n\n"
 					+ (canAutoDownload ? "Download the ready-to-use package for your system now?"
 							: "Open the download page to get the update?");
 

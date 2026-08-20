@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultListSelectionModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -43,11 +44,14 @@ import javax.swing.table.TableRowSorter;
 
 import com.videodownloader.controller.BrowserController;
 import com.videodownloader.controller.DownloadManager;
+import com.videodownloader.controller.UpdateChecker;
+import com.videodownloader.model.BrowserEngine;
 
 public class AppGUI extends JFrame {
 	private static final long serialVersionUID = 1L;
 	private JTextField urlInput;
 	private JButton btnClipboard, btnHunt, btnImportApi;
+	private JComboBox<BrowserEngine> cbBrowserEngine;
 	private DefaultTableModel tableModel;
 	private JTable queueTable;
 	private TableRowSorter<DefaultTableModel> sorter;
@@ -63,7 +67,7 @@ public class AppGUI extends JFrame {
 	public AppGUI(DownloadManager manager) {
 		this.manager = manager;
 
-		setTitle("Video Downloader - v1.0.5");
+		setTitle("Video Downloader - " + UpdateChecker.getCurrentVersion());
 		try {
 			URL iconUrl = getClass().getResource("/logo.png");
 			if (iconUrl != null) {
@@ -93,11 +97,22 @@ public class AppGUI extends JFrame {
 		btnImportApi.setToolTipText("Import a JSON episode list for bulk downloads");
 		btnClipboard = new JButton("From Clipboard");
 		btnClipboard.setToolTipText("Parse video URLs from clipboard content");
+
+		cbBrowserEngine = new JComboBox<>(BrowserEngine.values());
+		cbBrowserEngine.setSelectedItem(BrowserController.getEngine());
+		cbBrowserEngine.setToolTipText("Hunting Mode Browser Engine (Auto / Chromium / Mozilla Firefox)");
+		cbBrowserEngine.addActionListener(e -> {
+			BrowserEngine selected = (BrowserEngine) cbBrowserEngine.getSelectedItem();
+			BrowserController.setEngine(selected);
+			logToConsole("=> [Hunter] Browser engine set to: " + selected.getDisplayName());
+		});
+
 		btnHunt = new JButton("Hunt / Download");
 		btnHunt.setToolTipText("Detect stream URL via browser extension, or download directly");
 		btnHunt.putClientProperty("JButton.buttonType", "roundRect");
 		btnPanel.add(btnImportApi);
 		btnPanel.add(btnClipboard);
+		btnPanel.add(cbBrowserEngine);
 		btnPanel.add(btnHunt);
 
 		topPanel.add(inputPanel, BorderLayout.CENTER);
@@ -438,9 +453,10 @@ public class AppGUI extends JFrame {
 	private void startHunting() {
 		String movieUrl = urlInput.getText().trim();
 		String lowerUrl = movieUrl.toLowerCase();
+		BrowserEngine engine = BrowserController.resolveActiveEngine();
 
 		if (movieUrl.isEmpty()) {
-			logToConsole("=> [Hunter] Launching Native Chrome for manual browsing...");
+			logToConsole("=> [Hunter] Launching " + engine.getDisplayName() + " for manual browsing...");
 			BrowserController.openCaptureBrowser("");
 			return;
 		}
@@ -450,7 +466,7 @@ public class AppGUI extends JFrame {
 			logToConsole("=> [System] Detected native platform. Direct download...");
 			manager.processLink(movieUrl);
 		} else {
-			logToConsole("=> [Hunter] Launching Native Chrome Engine...");
+			logToConsole("=> [Hunter] Launching " + engine.getDisplayName() + " Engine...");
 			BrowserController.openCaptureBrowser(movieUrl);
 		}
 

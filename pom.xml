@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.myname</groupId>
 	<artifactId>VideoDownloaderApp</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.6</version>
 	<properties>
 		<maven.compiler.source>21</maven.compiler.source>
 		<maven.compiler.target>21</maven.compiler.target>
@@ -25,6 +25,12 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -40,6 +46,8 @@
 							<archive>
 								<manifest>
 									<mainClass>com.videodownloader.Program</mainClass>
+									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+									<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
 								</manifest>
 							</archive>
 							<descriptorRefs>
@@ -55,7 +63,7 @@
 							<goal>single</goal>
 						</goals>
 						<configuration>
-							<finalName>VideoDownloader-v1.0.5</finalName>
+							<finalName>VideoDownloader-v1.0.6</finalName>
 							<appendAssemblyId>true</appendAssemblyId>
 							<descriptors>
 								<descriptor>src/assembly/win.xml</descriptor>
