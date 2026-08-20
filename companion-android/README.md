@@ -24,61 +24,51 @@ Requirements: phone and PC on the same Wi-Fi, desktop app running. On the first 
 
 ---
 
-## Hướng dẫn tìm địa chỉ IP của máy tính
+## How to find your PC's IP address
 
-Điện thoại cần biết địa chỉ IP của máy tính trong mạng Wi-Fi để gửi link về. Có 2 cách:
+Your phone needs to know your computer's local IP address on the Wi-Fi network. There are two methods:
 
-### Cách 1 — Xem trong app Video Downloader (dễ nhất, khuyên dùng)
+### Method 1 — Check inside Video Downloader (Recommended, easiest)
 
-1. Mở app **Video Downloader** trên máy tính.
-2. Nhìn vào khung **Console Log** ở dưới cùng app.
-3. Tìm dòng có dạng:
+1. Open **Video Downloader** on your PC.
+2. Look at the **Console Log** area at the bottom.
+3. Find the line:
    ```
    [Companion] Phone companion can reach this PC at: http://192.168.1.10:8765
    ```
-4. Số ở giữa `http://` và `:8765` chính là địa chỉ IP cần nhập vào app trên điện thoại (ví dụ trên là `192.168.1.10`).
+4. The numbers between `http://` and `:8765` are your PC's IP address (e.g. `192.168.1.10`).
 
-Nếu không thấy dòng này, kéo lên đầu console log — nó chỉ in ra **một lần** ngay lúc mở app.
+If you don't see it, scroll to the top of the console log — it is printed once on startup.
 
-### Cách 2 — Dùng lệnh `ipconfig` (nếu Cách 1 không tìm thấy)
+### Method 2 — Use network commands
 
-Dùng khi bạn không mở được app, hoặc muốn tự kiểm tra lại địa chỉ IP.
+**On Windows:**
 
-**Trên Windows:**
-
-1. Bấm tổ hợp phím **Windows + R** để mở hộp thoại Run.
-2. Gõ `cmd` rồi nhấn **Enter** — cửa sổ đen (Command Prompt) sẽ hiện ra.
-3. Gõ lệnh sau rồi nhấn **Enter**:
-   ```
+1. Press **Win + R**, type `cmd` and press **Enter**.
+2. Run:
+   ```cmd
    ipconfig
    ```
-4. Bạn sẽ thấy một đoạn kết quả dài, tìm phần có tên **"Wireless LAN adapter Wi-Fi"** (nếu máy dùng Wi-Fi) hoặc **"Ethernet adapter"** (nếu cắm dây mạng LAN). Bỏ qua các phần khác như "Bluetooth" hay "VPN".
-5. Trong phần đó, tìm dòng **IPv4 Address** — đây chính là địa chỉ IP cần dùng:
+3. Look for your active adapter (**"Wireless LAN adapter Wi-Fi"** or **"Ethernet adapter"**) and find the **IPv4 Address**:
    ```
-   Wireless LAN adapter Wi-Fi:
-
-      Connection-specific DNS Suffix  . :
-      Link-local IPv6 Address . . . . . : fe80::...
-      IPv4 Address. . . . . . . . . . . : 192.168.1.10   <-- Đây, chỉ lấy số này
-      Subnet Mask . . . . . . . . . . . : 255.255.255.0
-      Default Gateway . . . . . . . . . : 192.168.1.1
+   IPv4 Address. . . . . . . . . . . : 192.168.1.10
    ```
-6. Nhập đúng dãy số đó (ví dụ `192.168.1.10`) vào ô IP trong app trên điện thoại rồi bấm **Save & Test**.
+4. Enter that IP into the companion app and tap **Save & Test**.
 
-**Trên macOS:**
+**On macOS:**
 
-1. Mở **System Settings → Wi-Fi** → bấm vào mạng Wi-Fi đang kết nối → **Details** → xem dòng **IP Address**.
-2. Hoặc mở **Terminal** và gõ: `ipconfig getifaddr en0`
+1. Open **System Settings → Wi-Fi** → click **Details** next to your connected network → find **IP Address**.
+2. Or in Terminal, run: `ipconfig getifaddr en0`
 
-**Trên Linux:**
+**On Linux:**
 
-1. Mở Terminal và gõ: `hostname -I` hoặc `ip addr show` rồi tìm dòng `inet` trong phần card Wi-Fi (thường tên `wlan0` hoặc `wlp...`).
+1. In Terminal, run: `hostname -I` or `ip addr show` and look for the `inet` address under your active interface (`wlan0`, `eth0`, etc.).
 
-### Lưu ý quan trọng
+### Important Notes
 
-- Địa chỉ IP có thể **đổi mỗi khi khởi động lại router hoặc kết nối lại Wi-Fi**. Nếu app điện thoại báo lỗi không kết nối được sau một thời gian, hãy kiểm tra lại IP bằng Cách 1 hoặc Cách 2 ở trên.
-- Điện thoại và máy tính phải **cùng một mạng Wi-Fi** (không phải điện thoại dùng 4G/5G còn máy tính dùng Wi-Fi khác).
-- Nếu vẫn không kết nối được, kiểm tra xem **Windows Firewall** có đang chặn Java không (Cài đặt → Windows Security → Firewall → Allow an app).
+- Local IP addresses may **change when restarting your router or reconnecting Wi-Fi**. If the phone app fails to connect later, re-check your IP.
+- The phone and PC must be connected to the **same Wi-Fi network**.
+- If connection fails, check if **Windows Firewall** or another firewall is blocking Java port `8765`.
 
 ## Build
 

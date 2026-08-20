@@ -302,7 +302,10 @@ public class DownloadManager implements Observer {
 						String epNumber = item.get("name").getAsString();
 						String m3u8Url = item.get("m3u8").getAsString();
 
-						String fileName = movieName + " - Tập " + epNumber;
+						String fileName = movieName + " - "
+								+ (epNumber.toLowerCase().startsWith("episode") || epNumber.toLowerCase().startsWith("ep")
+										? epNumber
+										: "Episode " + epNumber);
 
 						if (gui != null) {
 							int newRow = gui.addQueueItem(fileName, "MP4", "Waiting...");

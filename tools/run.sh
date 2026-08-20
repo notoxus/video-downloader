@@ -40,7 +40,7 @@ download_jre() {
     echo "[Bootstrapper] JRE not found for platform: $PLATFORM"
     echo "[Bootstrapper] Fetching download URL from Adoptium..."
 
-    # Kiểm tra curl hoặc wget
+    # Check for curl or wget
     if command -v curl &>/dev/null; then
         DOWNLOADER="curl"
     elif command -v wget &>/dev/null; then

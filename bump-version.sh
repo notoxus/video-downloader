@@ -44,7 +44,7 @@ echo "Bumping to v$NEW ..."
 
 # --- Desktop ---
 sed -i -E "s/(<finalName>VideoDownloader-v)[0-9]+\.[0-9]+\.[0-9]+(<\/finalName>)/\1$NEW\2/" pom.xml
-sed -i -E "s/(<version>)[^<]+(<\/version>)/\1$NEW\2/" pom.xml
+sed -i -E "1,15s/(<version>)[^<]+(<\/version>)/\1$NEW\2/" pom.xml
 
 if [ -f src/main/resources/version.properties ]; then
     echo "version=$NEW" > src/main/resources/version.properties

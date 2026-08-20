@@ -12,16 +12,16 @@ Welcome to the setup guide for **Video Downloader**! The application is **Plug &
 
 1. Navigate to the **[Releases](../../releases)** page of this repository.
 2. Download the archive that matches your Operating System:
-   * **Windows:** `VideoDownloader-v1.0.5-Win.zip`
+   * **Windows:** `VideoDownloader-v1.0.6-Win.zip`
    * **macOS:**
-     * `VideoDownloader-v1.0.5-Mac-Intel.tar.gz` (Intel x64)
-     * `VideoDownloader-v1.0.5-Mac-AppleSilicon.tar.gz` (Apple Silicon ARM)
+     * `VideoDownloader-v1.0.6-Mac-Intel.tar.gz` (Intel x64)
+     * `VideoDownloader-v1.0.6-Mac-AppleSilicon.tar.gz` (Apple Silicon ARM)
    * **Linux:**
-     * `VideoDownloader-v1.0.5-Linux-x64.tar.gz` (x64)
-     * `VideoDownloader-v1.0.5-Linux-ARM.tar.gz` (ARM64)
+     * `VideoDownloader-v1.0.6-Linux-x64.tar.gz` (x64)
+     * `VideoDownloader-v1.0.6-Linux-ARM.tar.gz` (ARM64)
    * **Android:**
-     * `VideoDownloader-v1.0.5.apk` (standalone — hunts and downloads directly on the phone)
-     * `VideoDownloader-v1.0.5-remote-desktop.apk` (companion — sends links from phone to the desktop app)
+     * `VideoDownloader-v1.0.6.apk` (standalone — hunts and downloads directly on the phone)
+     * `VideoDownloader-v1.0.6-remote-desktop.apk` (companion — sends links from phone to the desktop app)
 
 ## 📂 Package Structure (What's Inside)
 
@@ -38,7 +38,7 @@ Once extracted, your installation folder contains:
 
 ### For Windows Users
 
-1. Extract `VideoDownloader-v1.0.5-Win.zip` to any folder.
+1. Extract `VideoDownloader-v1.0.6-Win.zip` to any folder.
 2. **Double-click `run.bat`** to launch the app.
 
 > The launcher silently checks for the bundled JRE. If it's missing for any reason, it will download and install it automatically before launching.

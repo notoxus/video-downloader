@@ -27,7 +27,7 @@ No Java installation required — a bundled JRE is included.
 
 | Feature | Description |
 |---|---|
-| **Browser Hunting** | Injects a Chrome extension that intercepts HLS/DASH stream URLs as you browse |
+| **Browser Hunting** | Intercepts HLS/DASH stream URLs as you browse via Chrome/Chromium or Mozilla Firefox extension |
 | **Direct Download** | YouTube, TikTok, Facebook, Instagram — extracted directly via yt-dlp |
 | **Clipboard Monitor** | Background thread watches your clipboard; paste a URL and it auto-queues |
 | **Bulk Import** | Import an API JSON with multiple episodes to queue an entire series |
@@ -129,7 +129,7 @@ Captured URLs are sent via HTTP POST to the app on `localhost:8765`, then queued
 ## Requirements
 
 - **OS:** Windows 10+, macOS 12+, or Linux (x64/ARM)
-- **Browser:** Google Chrome or Chromium (for Hunting mode)
+- **Browser:** Google Chrome, Chromium, Brave, Microsoft Edge, or Mozilla Firefox (for Hunting mode)
 - **Internet:** Required on first launch only if the bundled JRE is missing (auto-downloaded from Adoptium)
 
 ---
@@ -148,6 +148,60 @@ Outputs are in `target/` — platform-specific archives for Windows, macOS (x64/
 
 ---
 
+## Git Tag & Release Management
+
+The GitHub Actions CI automatically builds multi-platform packages and publishes a GitHub Release whenever a new tag matching `v*.*.*` is pushed.
+
+### 1. Create and Push a New Tag (Release)
+
+Use the `./bump-version.sh` script to automatically bump the version and synchronize all project files:
+
+```bash
+# Auto-bump patch version from the latest tag (e.g. v1.0.6 -> v1.0.7):
+./bump-version.sh
+
+# Or specify an explicit version:
+./bump-version.sh [new version]
+# For example:
+./bump-version.sh 1.0.7
+
+# Commit the version changes and create the tag:
+git commit -am "release: v1.0.7"
+git tag v1.0.7
+
+# Push code and tag to GitHub to trigger CI release build:
+git push origin main
+git push origin v1.0.7
+```
+
+### 2. Delete a Tag
+
+When you need to delete an incorrect or broken tag:
+
+- **Delete local tag:**
+  ```bash
+  git tag -d v1.0.7
+  ```
+- **Delete remote tag on GitHub:**
+  ```bash
+  git push origin --delete v1.0.7
+  ```
+- *(Optional)* If GitHub already created a Release for that tag, go to **Releases** on GitHub and click **Delete release**.
+
+### 3. Overwrite / Force Update a Tag
+
+When you need to update an existing tag to point to a newer commit without changing the version number:
+
+```bash
+# 1. Update the local tag to point to the current commit (using -f / --force):
+git tag -f v1.0.7
+
+# 2. Force-push the updated tag to GitHub:
+git push origin -f v1.0.7
+```
+
+---
+
 ## Troubleshooting
 
 **The extension tab doesn't close / nothing gets captured**
@@ -157,9 +211,9 @@ Outputs are in `target/` — platform-specific archives for Windows, macOS (x64/
 
 **Download fails with an error**
 - Update yt-dlp: delete `yt-dlp.exe` (or `yt-dlp`) from the app folder and restart — it will auto-download the latest version.
-- Some sites require cookies. Open the site normally in Chrome (logged in), then use Hunting mode.
+- Some sites require cookies. Open the site normally in browser (logged in), then use Hunting mode.
 
-**Chrome says the extension is invalid**
+**Browser says the extension is invalid**
 - Delete `~/.VideoDownloaderApp/Extension/` and restart the app to regenerate it.
 
 **yt-dlp warns "No supported JavaScript runtime could be found"**
